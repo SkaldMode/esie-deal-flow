@@ -39,7 +39,7 @@ const Index = () => {
     };
 
     fetchActiveDeal();
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   if (authLoading || loading) {
     return (
