@@ -89,6 +89,12 @@ export default function CreateDeal() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="bg-muted/50 p-4 rounded-lg border border-border mb-4">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Note:</strong> Creating a new deal will automatically archive your current active deal. 
+                  All data will be preserved and accessible from the Archived Deals page.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="account_name">Account Name *</Label>
                 <Input
