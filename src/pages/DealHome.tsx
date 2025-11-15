@@ -26,6 +26,7 @@ export default function DealHome() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deal, setDeal] = useState<Deal | null>(null);
+  const [recentMeeting, setRecentMeeting] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,6 +42,19 @@ export default function DealHome() {
 
         if (error) throw error;
         setDeal(data);
+
+        // Fetch most recent meeting
+        const { data: meetingData } = await supabase
+          .from("meetings")
+          .select("*")
+          .eq("deal_id", dealId)
+          .order("meeting_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (meetingData) {
+          setRecentMeeting(meetingData);
+        }
       } catch (error: any) {
         toast({
           title: "Error loading deal",
@@ -166,7 +180,10 @@ export default function DealHome() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
-          <Button className="gap-2">
+          <Button 
+            className="gap-2"
+            onClick={() => navigate(`/deal/${deal.id}/add-meeting`)}
+          >
             <Plus className="h-4 w-4" />
             Add Meeting Notes
           </Button>
@@ -187,16 +204,43 @@ export default function DealHome() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Next Meeting
+                Recent Meeting
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm mb-2">No meetings scheduled</p>
-                <Button variant="link" size="sm">
-                  Add your first meeting
-                </Button>
-              </div>
+              {recentMeeting ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold">{recentMeeting.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(recentMeeting.meeting_date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="p-0 h-auto"
+                    onClick={() => navigate(`/meeting/${recentMeeting.id}`)}
+                  >
+                    View details →
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm mb-2">No meetings yet</p>
+                  <Button 
+                    variant="link" 
+                    size="sm"
+                    onClick={() => navigate(`/deal/${deal.id}/add-meeting`)}
+                  >
+                    Add your first meeting
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
