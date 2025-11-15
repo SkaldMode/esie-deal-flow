@@ -59,15 +59,26 @@ const Index = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold">EISE</h1>
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              await signOut();
-              navigate("/auth");
-            }}
-          >
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            {activeDeal && (
+              <Button 
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/archived-deals")}
+              >
+                View Archived
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                await signOut();
+                navigate("/auth");
+              }}
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

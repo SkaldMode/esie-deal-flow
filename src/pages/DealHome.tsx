@@ -94,15 +94,24 @@ export default function DealHome() {
               {deal.status}
             </Badge>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              await signOut();
-              navigate("/");
-            }}
-          >
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/archived-deals")}
+            >
+              View Archived
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                await signOut();
+                navigate("/");
+              }}
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
