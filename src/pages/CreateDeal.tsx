@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD"];
+const STAGES = ["Discovery", "Demo", "Proposal", "Negotiation", "Closed Won", "Closed Lost"];
 
 export default function CreateDeal() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function CreateDeal() {
     account_name: "",
     deal_value: "",
     currency: "USD",
+    stage: "Discovery",
     expected_close_month: "",
     internal_notes: "",
   });
@@ -39,6 +41,7 @@ export default function CreateDeal() {
           account_name: formData.account_name,
           deal_value: parseFloat(formData.deal_value),
           currency: formData.currency,
+          stage: formData.stage,
           expected_close_month: formData.expected_close_month,
           internal_notes: formData.internal_notes || null,
           status: "active",
@@ -136,6 +139,27 @@ export default function CreateDeal() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stage">Deal Stage *</Label>
+                <Select
+                  value={formData.stage}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, stage: value })
+                  }
+                >
+                  <SelectTrigger id="stage">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STAGES.map((stage) => (
+                      <SelectItem key={stage} value={stage}>
+                        {stage}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

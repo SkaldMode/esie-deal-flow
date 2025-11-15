@@ -23,6 +23,7 @@ export type Database = {
           expected_close_month: string
           id: string
           internal_notes: string | null
+          stage: string
           status: string
           updated_at: string
           user_id: string
@@ -35,6 +36,7 @@ export type Database = {
           expected_close_month: string
           id?: string
           internal_notes?: string | null
+          stage?: string
           status?: string
           updated_at?: string
           user_id: string
@@ -47,6 +49,7 @@ export type Database = {
           expected_close_month?: string
           id?: string
           internal_notes?: string | null
+          stage?: string
           status?: string
           updated_at?: string
           user_id?: string
