@@ -8,8 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD"];
 const STAGES = ["Discovery", "Demo", "Proposal", "Negotiation", "Closed Won", "Closed Lost"];
@@ -24,16 +28,28 @@ export default function CreateDeal() {
     deal_value: "",
     currency: "USD",
     stage: "Discovery",
-    expected_close_month: "",
     internal_notes: "",
   });
+  const [expectedCloseDate, setExpectedCloseDate] = useState<Date>();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
+    if (!expectedCloseDate) {
+      toast({
+        title: "Missing information",
+        description: "Please select an expected close date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Format date as YYYY-MM-01 for the first day of the selected month
+      const formattedDate = format(expectedCloseDate, "yyyy-MM-01");
+
       const { data, error } = await supabase
         .from("deals")
         .insert({
@@ -42,7 +58,7 @@ export default function CreateDeal() {
           deal_value: parseFloat(formData.deal_value),
           currency: formData.currency,
           stage: formData.stage,
-          expected_close_month: formData.expected_close_month,
+          expected_close_month: formattedDate,
           internal_notes: formData.internal_notes || null,
           status: "active",
         })
@@ -169,19 +185,35 @@ export default function CreateDeal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expected_close_month">Expected Close Month *</Label>
-                <Input
-                  id="expected_close_month"
-                  type="month"
-                  value={formData.expected_close_month}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      expected_close_month: e.target.value + "-01",
-                    })
-                  }
-                  required
-                />
+                <Label>Expected Close Month *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !expectedCloseDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expectedCloseDate ? (
+                        format(expectedCloseDate, "MMMM yyyy")
+                      ) : (
+                        <span>Select expected close month</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={expectedCloseDate}
+                      onSelect={setExpectedCloseDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
