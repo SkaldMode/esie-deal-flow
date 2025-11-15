@@ -58,34 +58,55 @@ export type Database = {
       }
       meetings: {
         Row: {
+          approval_clues: Json | null
           channel: string
           created_at: string
           deal_id: string
+          extraction_error: string | null
+          extraction_status: string | null
           id: string
           meeting_date: string
+          objections: Json | null
+          quotes: Json | null
           raw_notes: string
+          risks: Json | null
+          stakeholders: Json | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_clues?: Json | null
           channel: string
           created_at?: string
           deal_id: string
+          extraction_error?: string | null
+          extraction_status?: string | null
           id?: string
           meeting_date: string
+          objections?: Json | null
+          quotes?: Json | null
           raw_notes: string
+          risks?: Json | null
+          stakeholders?: Json | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_clues?: Json | null
           channel?: string
           created_at?: string
           deal_id?: string
+          extraction_error?: string | null
+          extraction_status?: string | null
           id?: string
           meeting_date?: string
+          objections?: Json | null
+          quotes?: Json | null
           raw_notes?: string
+          risks?: Json | null
+          stakeholders?: Json | null
           title?: string
           updated_at?: string
           user_id?: string

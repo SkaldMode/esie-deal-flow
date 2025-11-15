@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 const CHANNELS = ["In-Person", "Video Call", "Phone Call", "Email", "Other"];
 
@@ -80,10 +80,30 @@ export default function AddMeeting() {
       if (error) throw error;
 
       toast({
-        title: "Meeting added!",
-        description: `${formData.title} has been saved.`,
+        title: "Meeting saved!",
+        description: "Extracting intelligence from your notes...",
       });
 
+      // Trigger AI extraction (non-blocking)
+      supabase.functions
+        .invoke('extract-meeting-intelligence', {
+          body: { 
+            meetingId: data.id,
+            rawNotes: formData.raw_notes
+          }
+        })
+        .then(({ error: extractError }) => {
+          if (extractError) {
+            console.error('Extraction error:', extractError);
+            toast({
+              title: "Note",
+              description: "AI extraction is processing. You can view results shortly.",
+              variant: "default",
+            });
+          }
+        });
+
+      // Navigate immediately, don't wait for extraction
       navigate(`/meeting/${data.id}`);
     } catch (error: any) {
       toast({
