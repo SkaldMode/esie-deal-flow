@@ -93,7 +93,13 @@ export default function DealHome() {
               {deal.status}
             </Badge>
           </div>
-          <Button variant="outline" onClick={signOut}>
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              await signOut();
+              navigate("/");
+            }}
+          >
             Sign Out
           </Button>
         </div>

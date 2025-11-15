@@ -13,10 +13,12 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
       return;
     }
+
+    if (!user) return;
 
     const fetchActiveDeal = async () => {
       try {
@@ -57,7 +59,13 @@ const Index = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold">EISE</h1>
-          <Button variant="outline" onClick={signOut}>
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              await signOut();
+              navigate("/auth");
+            }}
+          >
             Sign Out
           </Button>
         </div>
