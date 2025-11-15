@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, Video } from "lucide-react";
+import { ArrowLeft, Calendar, Video, User, MessageSquare, AlertTriangle, TrendingUp, Loader2 } from "lucide-react";
 
 interface Meeting {
   id: string;
@@ -16,6 +16,13 @@ interface Meeting {
   channel: string;
   raw_notes: string;
   created_at: string;
+  stakeholders: any[];
+  quotes: any[];
+  objections: any[];
+  risks: any[];
+  approval_clues: any[];
+  extraction_status: string;
+  extraction_error: string | null;
 }
 
 interface Deal {
@@ -46,7 +53,16 @@ export default function MeetingDetails() {
           .single();
 
         if (meetingError) throw meetingError;
-        setMeeting(meetingData);
+        
+        // Cast the data to Meeting type
+        setMeeting({
+          ...meetingData,
+          stakeholders: Array.isArray(meetingData.stakeholders) ? meetingData.stakeholders : [],
+          quotes: Array.isArray(meetingData.quotes) ? meetingData.quotes : [],
+          objections: Array.isArray(meetingData.objections) ? meetingData.objections : [],
+          risks: Array.isArray(meetingData.risks) ? meetingData.risks : [],
+          approval_clues: Array.isArray(meetingData.approval_clues) ? meetingData.approval_clues : [],
+        } as Meeting);
 
         // Fetch deal info
         const { data: dealData, error: dealError } = await supabase
@@ -136,21 +152,205 @@ export default function MeetingDetails() {
             </CardContent>
           </Card>
 
-          {/* AI Extraction Placeholder */}
+          {/* AI Insights */}
           <Card>
             <CardHeader>
               <CardTitle>AI Insights</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="mb-2">Coming soon:</p>
-                <ul className="space-y-1 text-sm">
-                  <li>• Stakeholder extraction</li>
-                  <li>• Key quotes and objections</li>
-                  <li>• Next steps identification</li>
-                  <li>• Risk detection</li>
-                </ul>
-              </div>
+              {meeting.extraction_status === 'processing' && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                  <p className="text-sm">Extracting intelligence from your notes...</p>
+                </div>
+              )}
+
+              {meeting.extraction_status === 'failed' && (
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    AI extraction encountered an issue
+                  </p>
+                  {meeting.extraction_error && (
+                    <p className="text-xs text-muted-foreground">
+                      {meeting.extraction_error}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {meeting.extraction_status === 'completed' && (
+                <div className="space-y-6">
+                  {/* Stakeholders */}
+                  {meeting.stakeholders && meeting.stakeholders.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Stakeholders ({meeting.stakeholders.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {meeting.stakeholders.map((stakeholder: any, idx: number) => (
+                          <Card key={idx} className="p-3">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <p className="font-semibold">{stakeholder.name}</p>
+                                <p className="text-sm text-muted-foreground">{stakeholder.role}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge variant={
+                                  stakeholder.sentiment === 'positive' ? 'default' :
+                                  stakeholder.sentiment === 'negative' ? 'destructive' : 'secondary'
+                                }>
+                                  {stakeholder.sentiment}
+                                </Badge>
+                                <Badge variant="outline">{stakeholder.influence} influence</Badge>
+                              </div>
+                            </div>
+                            {stakeholder.notes && (
+                              <p className="text-sm text-muted-foreground mt-2">
+                                {stakeholder.notes}
+                              </p>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quotes */}
+                  {meeting.quotes && meeting.quotes.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Key Quotes ({meeting.quotes.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {meeting.quotes.map((quote: any, idx: number) => (
+                          <Card key={idx} className="p-3">
+                            <p className="text-sm italic mb-2">"{quote.quote}"</p>
+                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                              <span>— {quote.speaker}</span>
+                              {quote.context && <span>{quote.context}</span>}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Objections */}
+                  {meeting.objections && meeting.objections.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Objections ({meeting.objections.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {meeting.objections.map((objection: any, idx: number) => (
+                          <Card key={idx} className="p-3">
+                            <div className="flex justify-between items-start mb-2">
+                              <p className="font-semibold text-sm">{objection.topic}</p>
+                              <Badge variant={
+                                objection.severity === 'high' ? 'destructive' :
+                                objection.severity === 'medium' ? 'default' : 'secondary'
+                              }>
+                                {objection.severity}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {objection.description}
+                            </p>
+                            {objection.stakeholder && (
+                              <p className="text-xs text-muted-foreground">
+                                Raised by: {objection.stakeholder}
+                              </p>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Risks */}
+                  {meeting.risks && meeting.risks.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Risks ({meeting.risks.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {meeting.risks.map((risk: any, idx: number) => (
+                          <Card key={idx} className="p-3">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <Badge variant="outline" className="mb-1">{risk.category}</Badge>
+                                <p className="text-sm">{risk.description}</p>
+                              </div>
+                              <Badge variant={
+                                risk.severity === 'high' ? 'destructive' :
+                                risk.severity === 'medium' ? 'default' : 'secondary'
+                              }>
+                                {risk.severity}
+                              </Badge>
+                            </div>
+                            {risk.mitigation && (
+                              <div className="mt-2 p-2 bg-muted rounded text-xs">
+                                <span className="font-semibold">Mitigation: </span>
+                                {risk.mitigation}
+                              </div>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Approval Clues */}
+                  {meeting.approval_clues && meeting.approval_clues.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Approval Signals ({meeting.approval_clues.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {meeting.approval_clues.map((clue: any, idx: number) => (
+                          <Card key={idx} className="p-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <Badge variant="default" className="mb-1">{clue.type}</Badge>
+                                <p className="text-sm">{clue.description}</p>
+                                {clue.stakeholder && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    From: {clue.stakeholder}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No insights found */}
+                  {(!meeting.stakeholders || meeting.stakeholders.length === 0) &&
+                   (!meeting.quotes || meeting.quotes.length === 0) &&
+                   (!meeting.objections || meeting.objections.length === 0) &&
+                   (!meeting.risks || meeting.risks.length === 0) &&
+                   (!meeting.approval_clues || meeting.approval_clues.length === 0) && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="text-sm">No insights extracted from the meeting notes.</p>
+                      <p className="text-xs mt-2">Try adding more detailed notes.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {meeting.extraction_status === 'pending' && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Extraction pending...</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
