@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import CreateDeal from "./pages/CreateDeal";
 import DealHome from "./pages/DealHome";
 import ArchivedDeals from "./pages/ArchivedDeals";
+import AddMeeting from "./pages/AddMeeting";
+import MeetingDetails from "./pages/MeetingDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/create-deal" element={<CreateDeal />} />
             <Route path="/deal/:dealId" element={<DealHome />} />
+            <Route path="/deal/:dealId/add-meeting" element={<AddMeeting />} />
+            <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
             <Route path="/archived-deals" element={<ArchivedDeals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

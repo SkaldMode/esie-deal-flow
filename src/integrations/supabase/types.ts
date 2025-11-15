@@ -56,6 +56,50 @@ export type Database = {
         }
         Relationships: []
       }
+      meetings: {
+        Row: {
+          channel: string
+          created_at: string
+          deal_id: string
+          id: string
+          meeting_date: string
+          raw_notes: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          deal_id: string
+          id?: string
+          meeting_date: string
+          raw_notes: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+          meeting_date?: string
+          raw_notes?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
