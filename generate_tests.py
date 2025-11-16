@@ -31,10 +31,10 @@ def generate_and_save_tests():
     
     user_message = f"Generate Pytest unit tests for the following changes:\n\n{PR_DIFF}"
     
-    # 4. Call the Claude API
+   # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # Using the stable, working alias that successfully connected in the last run
+            # We assume this model ID is now working, as the 404 error is gone
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -42,6 +42,31 @@ def generate_and_save_tests():
                 {"role": "user", "content": user_message}
             ]
         )
+        
+        # 5. Process and save the output (THE FINAL FIX FOR THE LIST ERROR)
+        
+        # Check if content exists and the first item has text (Correct list indexing)
+        if message.content and len(message.content) > 0 and hasattr(message.content, 'text'):
+            
+            # *** This is the critical line: Accessing the first item  of the list ***
+            code_output = message.content.text
+            
+            with open("claude_output.txt", "w") as f:
+                f.write(code_output)
+                
+            print("Successfully generated tests and saved to claude_output.txt")
+
+        else:
+            print("Error: Claude returned empty or unusable text content.")
+            sys.exit(1)
+            
+    except Exception as e:
+        # This handles network, auth, and other API errors
+        print(f"An error occurred during API call: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    generate_and_save_tests()
         
         # 5. Process and save the output (Fixes the SyntaxError and the 'list' object error)
         # We assume the generated code is in the first content block and is text.
