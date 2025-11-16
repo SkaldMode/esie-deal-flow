@@ -13,7 +13,6 @@ def generate_and_save_tests():
         
     if not PR_DIFF:
         print("Error: PR_DIFF (git diff) not found.")
-        # If the diff is empty, we exit gracefully.
         return
         
     # 2. Configure the Claude client
@@ -31,10 +30,10 @@ def generate_and_save_tests():
     
     user_message = f"Generate Pytest unit tests for the following changes:\n\n{PR_DIFF}"
     
-   # 4. Call the Claude API
+    # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # We assume this model ID is now working, as the 404 error is gone
+            # Using the stable model alias
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -43,47 +42,26 @@ def generate_and_save_tests():
             ]
         )
         
-        # 5. Process and save the output (THE FINAL FIX FOR THE LIST ERROR)
+        # 5. Process and save the output (FINAL, CORRECT FIX for the API response structure)
         
-        # Check if content exists and the first item has text (Correct list indexing)
-        if message.content and len(message.content) > 0 and hasattr(message.content, 'text'):
-            
-            # *** This is the critical line: Accessing the first item  of the list ***
-            code_output = message.content.text
-            
-            with open("claude_output.txt", "w") as f:
-                f.write(code_output)
+        # Check if the content list exists and is not empty
+        if message.content and len(message.content) > 0:
+            # Access the first item in the list and check if it has the text attribute.
+            if hasattr(message.content, 'text'):
+                code_output = message.content.text
                 
-            print("Successfully generated tests and saved to claude_output.txt")
-
-        else:
-            print("Error: Claude returned empty or unusable text content.")
-            sys.exit(1)
+                with open("claude_output.txt", "w") as f:
+                    f.write(code_output)
+                    
+                print("Successfully generated tests and saved to claude_output.txt")
+                return # Exit on success
             
-    except Exception as e:
-        # This handles network, auth, and other API errors
-        print(f"An error occurred during API call: {e}")
+        # If execution reaches here, Claude returned something unexpected
+        print("Error: Claude returned unparseable content or an empty response.")
         sys.exit(1)
-
-if __name__ == "__main__":
-    generate_and_save_tests()
-        
-        # 5. Process and save the output (Fixes the SyntaxError and the 'list' object error)
-        # We assume the generated code is in the first content block and is text.
-        if message.content and message.content.text:
-            code_output = message.content.text
-            
-            # The 'with open' block is now correctly placed and indented
-            with open("claude_output.txt", "w") as f:
-                f.write(code_output)
-                
-            print("Successfully generated tests and saved to claude_output.txt")
-        else:
-            print("Error: Claude returned empty or unparseable content.")
-            sys.exit(1)
             
     except Exception as e:
-        # This handles API errors (e.g., network, authentication, etc.)
+        # This handles network or API errors
         print(f"An error occurred during API call: {e}")
         sys.exit(1)
 
