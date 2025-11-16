@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare, Presentation } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, Users, Video, Network, MessageSquare, Presentation, Sparkles, TrendingUp, Target } from "lucide-react";
 import SimulationDebrief from "@/components/SimulationDebrief";
 
 interface Deal {
@@ -100,8 +100,11 @@ export default function DealHome() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading deal...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Sparkles className="h-5 w-5 animate-pulse" />
+          <p>Loading your mission...</p>
+        </div>
       </div>
     );
   }
@@ -123,41 +126,53 @@ export default function DealHome() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Home
-            </Button>
-            <h1 className="text-xl font-semibold">{deal.account_name}</h1>
-            <Badge variant={deal.status === "active" ? "default" : "secondary"}>
-              {deal.status}
-            </Badge>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/archived-deals")}
-            >
-              View Archived
+            <Button variant="ghost" size="sm" onClick={() => navigate("/archived-deals")}>
+              Archived
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                await signOut();
-                navigate("/");
-              }}
-            >
+            <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate("/"); }}>
               Sign Out
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="h-6 w-6 text-primary" />
+                <h1 className="text-3xl font-bold">Let's win {deal.account_name}</h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="font-semibold">{formatCurrency(deal.deal_value, deal.currency)}</span>
+                </div>
+                <span>•</span>
+                <span>Target: {formatDate(deal.expected_close_month)}</span>
+              </div>
+            </div>
+            <Badge variant={deal.status === "active" ? "default" : "secondary"} className="text-base px-4 py-2 self-start">
+              {deal.stage}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            What would you like to do?
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
         {/* Key Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
