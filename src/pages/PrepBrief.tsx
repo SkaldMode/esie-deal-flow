@@ -7,30 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, FileText, Loader2, Printer, Download } from "lucide-react";
-
-interface PrepBriefData {
-  executive_summary: string;
-  stakeholder_summary: Array<{
-    name: string;
-    role: string;
-    stance: string;
-    key_point: string;
-  }>;
-  risks_to_address: Array<{
-    risk: string;
-    severity: string;
-    mitigation: string;
-  }>;
-  last_meeting_key_takeaways: string[];
-  recommended_questions: Array<{
-    question: string;
-    purpose: string;
-    stakeholder?: string;
-  }>;
-  meeting_objectives: string[];
-  prep_notes: string[];
-}
+import { ArrowLeft, FileText, Loader2, Printer } from "lucide-react";
+import { generatePrepBrief, type PrepBriefData } from "@/lib/prepBriefTemplate";
 
 export default function PrepBrief() {
   const { dealId } = useParams();
@@ -55,15 +33,43 @@ export default function PrepBrief() {
   const generateBrief = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-prep-brief', {
-        body: { dealId }
-      });
+      // Fetch deal data
+      const { data: deal, error: dealError } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', dealId)
+        .single();
 
-      if (error) throw error;
+      if (dealError) throw dealError;
 
-      setBrief(data.brief);
-      setDealInfo(data.dealInfo);
-      setGeneratedAt(data.generatedAt);
+      // Fetch stakeholders
+      const { data: stakeholders, error: stakeholdersError } = await supabase
+        .from('stakeholders')
+        .select('*')
+        .eq('deal_id', dealId);
+
+      if (stakeholdersError) throw stakeholdersError;
+
+      // Fetch recent meetings (last 3)
+      const { data: meetings, error: meetingsError } = await supabase
+        .from('meetings')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('meeting_date', { ascending: false })
+        .limit(3);
+
+      if (meetingsError) throw meetingsError;
+
+      // Generate brief using template (no AI)
+      const generatedBrief = generatePrepBrief(
+        deal,
+        stakeholders || [],
+        meetings || []
+      );
+
+      setBrief(generatedBrief);
+      setDealInfo(deal);
+      setGeneratedAt(new Date().toISOString());
     } catch (error: any) {
       toast({
         title: "Error generating brief",
