@@ -53,17 +53,19 @@ jobs:
           # to ensure only executable code remains.
           sed '/^```/d' claude_output.txt > ai_generated_tests.py
           
-      # --- EXECUTION AND REPORTING STAGES ---
+     # --- EXECUTION AND REPORTING STAGES ---
       - name: Run Tests
         # This runs the existing tests plus the new ai_generated_tests.py
         run: |
           pytest --cov --cov-report=xml --junitxml=results.xml
 
-      # Reports Coverage
+      # Reports Coverage (USING NEW ACTION)
       - name: Post Coverage Summary to PR
-        # CHANGE THIS LINE to use the simpler '@v1' tag
-        uses: romeovs/code-coverage-summary-action@v1 
+        # REPLACED: using simple-elf/coverage-report-action@master instead
+        uses: simple-elf/coverage-report-action@master 
         with:
-          filename: coverage.xml
-          format: markdown
-          fail_below_min: true
+          # This action looks for the 'xml' file we generated in the pytest step
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          coverage-files: coverage.xml
+          # Ensure this is a minimum threshold to enforce quality [1]
+          fail-below-threshold: 75
