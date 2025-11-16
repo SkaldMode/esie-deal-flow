@@ -1,0 +1,67 @@
+name: AI Test Generation Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize] # Runs on new PR or when new commits are pushed
+
+jobs:
+  ai_verification:
+    runs-on: ubuntu-latest
+    # These permissions are required for fetching the diff and commenting on the PR
+    permissions:
+      contents: read 
+      pull-requests: write 
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # --- SETUP: Install dependencies including the Anthropic SDK ---
+      - name: Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies (Including Anthropic SDK)
+        # Installs the Anthropic library to talk to Claude's API
+        run: pip install anthropic pytest pytest-cov 
+        
+      # --- CRITICAL STEP 1: Get the PR Diff ---
+      - name: Get Pull Request Diff
+        id: pr_diff
+        # Uses the GitHub CLI to get the raw diff of changes
+        run: |
+          DIFF_CONTENT=$(gh pr diff ${{ github.event.pull_request.number }} --patch --repo ${{ github.repository }})
+          # Set the diff content as an environment variable for the Python script
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          echo "$DIFF_CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      # --- CRITICAL STEP 2: Execute the Claude Test Generation Script ---
+      - name: Execute AI Test Generation Script
+        run: python generate_tests.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_DIFF: ${{ env.PR_DIFF }}
+      
+      # --- CRITICAL STEP 3: PARSING THE OUTPUT ---
+      - name: Extract Raw Python Code
+        run: |
+          # 'sed' removes lines starting with triple backticks (```) or (```python)
+          # to ensure only executable code remains.
+          sed '/^```/d' claude_output.txt > ai_generated_tests.py
+          
+      # --- EXECUTION AND REPORTING STAGES ---
+      - name: Run Tests
+        # This runs the existing tests plus the new ai_generated_tests.py
+        run: |
+          pytest --cov --cov-report=xml --junitxml=results.xml
+
+      - name: Post Coverage Summary to PR
+        uses: romeovs/code-coverage-summary-action@v1.5.0 
+        with:
+          filename: coverage.xml
+          format: markdown
+          fail_below_min: true
