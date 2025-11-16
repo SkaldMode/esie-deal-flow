@@ -16,6 +16,7 @@ import StakeholderProfile from "./pages/StakeholderProfile";
 import StakeholderMap from "./pages/StakeholderMap";
 import SimulationSetup from "./pages/SimulationSetup";
 import SimulationChat from "./pages/SimulationChat";
+import PrepBrief from "./pages/PrepBrief";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/create-deal" element={<CreateDeal />} />
             <Route path="/deal/:dealId" element={<DealHome />} />
+            <Route path="/deal/:dealId/prep-brief" element={<PrepBrief />} />
             <Route path="/deal/:dealId/add-meeting" element={<AddMeeting />} />
             <Route path="/deal/:dealId/stakeholders" element={<Stakeholders />} />
             <Route path="/deal/:dealId/stakeholder/:stakeholderId" element={<StakeholderProfile />} />

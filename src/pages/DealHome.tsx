@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare } from "lucide-react";
+import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare, Presentation } from "lucide-react";
 import SimulationDebrief from "@/components/SimulationDebrief";
 
 interface Deal {
@@ -214,6 +214,10 @@ export default function DealHome() {
           >
             <Plus className="h-4 w-4" />
             Add Meeting Notes
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/prep-brief`)}>
+            <Presentation className="h-4 w-4" />
+            Generate Prep Brief
           </Button>
           <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}>
             <Users className="h-4 w-4" />
