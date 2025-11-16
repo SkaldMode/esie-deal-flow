@@ -1,4 +1,4 @@
-# Welcome to your Lovable Project! Hey there you naxui.
+# Welcome to your Lovable Project! Hey there you paxui.
 
 ## Project info
 
