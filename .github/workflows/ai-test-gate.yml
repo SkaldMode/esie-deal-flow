@@ -14,57 +14,57 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        
       - name: Set up Python Environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Install Dependencies (Including Anthropic SDK)
+          
+      - name: Install Dependencies
         run: pip install anthropic pytest pytest-cov 
-      - name: Get Pull Request Diff
-        id: pr_diff
+        
+      - name: Get Pull Request Diff and Save to File
         run: |
-          DIFF_CONTENT=$(gh pr diff ${{ github.event.pull_request.number }} --patch --repo ${{ github.repository }})
-          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
-          echo "$DIFF_CONTENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          gh pr diff ${{ github.event.pull_request.number }} --patch --repo ${{ github.repository }} > pr_diff.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
-      - name: Execute AI Test Generation Script
+      - name: Generate AI Tests
         run: python generate_tests.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          PR_DIFF: ${{ env.PR_DIFF }}
       
-      - name: Extract Raw Python Code
+      - name: Extract Python Code
         run: |
           python -c "
           import re
           with open('claude_output.txt', 'r') as f:
               content = f.read()
-          # Remove markdown code fences
           content = re.sub(r'\`\`\`python\n?', '', content)
           content = re.sub(r'\`\`\`\n?', '', content)
           with open('ai_generated_tests.py', 'w') as f:
               f.write(content)
           "
       
-      - name: Debug - Check Generated Files
+      - name: Post AI Tests to PR for Review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testCode = fs.readFileSync('ai_generated_tests.py', 'utf8');
+            const truncated = testCode.length > 3000 ? testCode.substring(0, 3000) + '\n\n... (truncated)' : testCode;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 AI Generated Tests\n\n**⚠️ Review these tests before merging!**\n\n\`\`\`python\n${truncated}\n\`\`\``
+            });
+      
+      - name: Run All Tests (Baseline + AI Generated)
         run: |
-          echo "=== Contents of claude_output.txt ==="
-          cat claude_output.txt
-          echo ""
-          echo "=== Contents of ai_generated_tests.py ==="
-          cat ai_generated_tests.py
-          echo ""
-          echo "=== List all test files ==="
-          find . -name "*test*.py" -o -name "test_*.py"
-          
-      - name: Run Tests
-        run: |
-          pytest ai_generated_tests.py -v --cov --cov-report=xml --junitxml=results.xml || true
+          pytest tests/ ai_generated_tests.py -v --cov --cov-report=xml --junitxml=results.xml
 
-      - name: Post Coverage Summary to PR
+      - name: Post Coverage to PR
         uses: MishaKav/pytest-coverage-comment@main 
         with:
           coverage-xml-path: coverage.xml
