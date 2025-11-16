@@ -157,6 +157,58 @@ export type Database = {
           },
         ]
       }
+      stakeholder_relationships: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          deal_id: string
+          from_stakeholder_id: string
+          id: string
+          relationship_type: string
+          to_stakeholder_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          deal_id: string
+          from_stakeholder_id: string
+          id?: string
+          relationship_type: string
+          to_stakeholder_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          deal_id?: string
+          from_stakeholder_id?: string
+          id?: string
+          relationship_type?: string
+          to_stakeholder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholder_relationships_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stakeholder_relationships_from_stakeholder_id_fkey"
+            columns: ["from_stakeholder_id"]
+            isOneToOne: false
+            referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stakeholder_relationships_to_stakeholder_id_fkey"
+            columns: ["to_stakeholder_id"]
+            isOneToOne: false
+            referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stakeholders: {
         Row: {
           communication_style: string | null

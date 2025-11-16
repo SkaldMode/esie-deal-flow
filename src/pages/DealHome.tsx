@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus } from "lucide-react";
+import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network } from "lucide-react";
 
 interface Deal {
   id: string;
@@ -202,6 +202,10 @@ export default function DealHome() {
           <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}>
             <Users className="h-4 w-4" />
             View Stakeholders
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholder-map`)}>
+            <Network className="h-4 w-4" />
+            Relationship Map
           </Button>
           <Button variant="outline" className="gap-2">
             <Video className="h-4 w-4" />

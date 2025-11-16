@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Building2, Filter } from "lucide-react";
+import { ArrowLeft, User, Building2, Filter, Network } from "lucide-react";
 
 interface Stakeholder {
   id: string;
@@ -132,9 +132,19 @@ export default function Stakeholders() {
             <Building2 className="h-6 w-6 text-muted-foreground" />
             <h1 className="text-3xl font-bold">{deal.account_name}</h1>
           </div>
-          <p className="text-muted-foreground">
-            Stakeholder profiles auto-extracted from meeting notes
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground">
+              Stakeholder profiles auto-extracted from meeting notes
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/deal/${dealId}/stakeholder-map`)}
+              className="gap-2"
+            >
+              <Network className="h-4 w-4" />
+              View Relationship Map
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

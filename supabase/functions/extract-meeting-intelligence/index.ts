@@ -36,7 +36,14 @@ Analyze the provided meeting notes and extract the following information in a st
    - clue_text: Details about the approval signal
    - source_name: Who provided this signal (if applicable)
 
-Return ONLY a valid JSON object with these exact keys: stakeholders, quotes, objections, risks, approval_clues
+6. **Relationships** (infer from context, role titles, and meeting dynamics):
+   - from_name: Person who has the relationship
+   - to_name: Person the relationship is with
+   - relationship_type: "reports_to", "influences", or "collaborates_with"
+   - confidence: Your confidence level (0.0 to 1.0) in this relationship inference
+   - reason: Brief explanation of why you inferred this relationship
+
+Return ONLY a valid JSON object with these exact keys: stakeholders, quotes, objections, risks, approval_clues, relationships
 Each key should be an array of objects following the structures described above.
 If a category has no items, return an empty array for that key.`;
 
@@ -121,12 +128,15 @@ serve(async (req) => {
     }
 
     // Validate structure
-    const requiredKeys = ['stakeholders', 'quotes', 'objections', 'risks', 'approval_clues'];
+    const requiredKeys = ['stakeholders', 'quotes', 'objections', 'risks', 'approval_clues', 'relationships'];
     const missingKeys = requiredKeys.filter(key => !extracted.hasOwnProperty(key));
     
     if (missingKeys.length > 0) {
       console.error('Missing keys in AI response:', missingKeys);
-      throw new Error(`AI response missing required keys: ${missingKeys.join(', ')}`);
+      // Don't fail if only relationships are missing (backward compatibility)
+      if (missingKeys.some(k => k !== 'relationships')) {
+        throw new Error(`AI response missing required keys: ${missingKeys.join(', ')}`);
+      }
     }
 
     // Save to database
@@ -214,6 +224,59 @@ serve(async (req) => {
       }
 
       console.log('Stakeholder profiles created/updated successfully');
+
+      // Process relationships
+      if (extracted.relationships && extracted.relationships.length > 0) {
+        console.log(`Processing ${extracted.relationships.length} relationships`);
+        
+        // First, create a map of stakeholder names to IDs for this deal
+        const { data: allStakeholders } = await supabase
+          .from('stakeholders')
+          .select('id, name, role_title')
+          .eq('deal_id', deal_id);
+
+        const stakeholderMap = new Map();
+        allStakeholders?.forEach(s => {
+          const key = `${s.name.toLowerCase()}|${s.role_title.toLowerCase()}`;
+          stakeholderMap.set(key, s.id);
+        });
+
+        // Process each relationship
+        for (const rel of extracted.relationships) {
+          if (!rel.from_name || !rel.to_name || !rel.relationship_type) continue;
+
+          // Find stakeholder IDs
+          const fromKey = `${rel.from_name.toLowerCase()}`;
+          const toKey = `${rel.to_name.toLowerCase()}`;
+          
+          let fromId = null;
+          let toId = null;
+
+          // Search for matching stakeholders by name
+          for (const [key, id] of stakeholderMap.entries()) {
+            const [name] = key.split('|');
+            if (name === fromKey) fromId = id;
+            if (name === toKey) toId = id;
+          }
+
+          // Only create relationship if both stakeholders exist
+          if (fromId && toId && fromId !== toId) {
+            await supabase
+              .from('stakeholder_relationships')
+              .insert({
+                deal_id,
+                from_stakeholder_id: fromId,
+                to_stakeholder_id: toId,
+                relationship_type: rel.relationship_type,
+                confidence: rel.confidence || 0.5
+              })
+              .select()
+              .maybeSingle(); // Ignore if duplicate relationship
+          }
+        }
+
+        console.log('Relationships processed successfully');
+      }
     } catch (stakeholderError) {
       // Log but don't fail the entire extraction if stakeholder creation fails
       console.error('Error creating stakeholder profiles:', stakeholderError);
