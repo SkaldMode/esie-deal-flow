@@ -13,32 +13,27 @@ Analyze the provided meeting notes and extract the following information in a st
 
 1. **Stakeholders**: People mentioned in the meeting with their details
    - name: Full name
-   - role: Job title/role
-   - sentiment: "positive", "neutral", or "negative" based on their attitude
-   - influence: "high", "medium", or "low" - their decision-making power
-   - notes: Key information about them
+   - role_title: Job title/role
+   - department: Department or business unit (if mentioned)
+   - stance_guess: "positive", "neutral", or "negative" based on their attitude toward the deal
+   - power_guess: "high", "medium", or "low" - their decision-making power
 
 2. **Quotes**: Direct quotes or paraphrased statements from stakeholders
-   - speaker: Who said it
-   - quote: The actual quote or paraphrase
+   - speaker_name: Who said it
+   - quote_text: The actual quote or paraphrase
    - context: Brief context about when/why this was said
 
 3. **Objections**: Concerns or objections raised during the meeting
-   - topic: What the objection is about
-   - severity: "high", "medium", or "low"
-   - stakeholder: Who raised it (if known)
-   - description: Details about the objection
+   - objection_text: Description of the objection
+   - source_name: Who raised it (if known)
 
 4. **Risks**: Potential risks or red flags identified
-   - category: e.g., "budget", "timeline", "technical", "political"
+   - risk_description: Description of the risk
    - severity: "high", "medium", or "low"
-   - description: Description of the risk
-   - mitigation: Potential mitigation strategy (if mentioned)
 
 5. **Approval Clues**: Signs of buying signals or approval process information
-   - type: e.g., "budget_approval", "timeline_confirmed", "champion_identified"
-   - description: Details about the approval signal
-   - stakeholder: Who provided this signal (if applicable)
+   - clue_text: Details about the approval signal
+   - source_name: Who provided this signal (if applicable)
 
 Return ONLY a valid JSON object with these exact keys: stakeholders, quotes, objections, risks, approval_clues
 Each key should be an array of objects following the structures described above.
