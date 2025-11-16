@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { addMeetingSchema } from "@/lib/validations";
 
 const CHANNELS = ["In-Person", "Video Call", "Phone Call", "Email", "Other"];
 
@@ -20,6 +21,7 @@ export default function AddMeeting() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [dealName, setDealName] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     meeting_date: "",
     title: "",
@@ -62,17 +64,22 @@ export default function AddMeeting() {
     e.preventDefault();
     if (!user || !dealId) return;
 
+    setErrors({});
     setLoading(true);
+
     try {
+      // Validate form
+      const validated = addMeetingSchema.parse(formData);
+
       const { data, error } = await supabase
         .from("meetings")
         .insert({
           deal_id: dealId,
           user_id: user.id,
-          meeting_date: formData.meeting_date,
-          title: formData.title,
-          channel: formData.channel,
-          raw_notes: formData.raw_notes,
+          meeting_date: validated.meeting_date,
+          title: validated.title,
+          channel: validated.channel,
+          raw_notes: validated.raw_notes,
         })
         .select()
         .single();
@@ -89,7 +96,7 @@ export default function AddMeeting() {
         .invoke('extract-meeting-intelligence', {
           body: { 
             meetingId: data.id,
-            rawNotes: formData.raw_notes
+            rawNotes: validated.raw_notes
           }
         })
         .then(({ error: extractError }) => {
@@ -106,11 +113,26 @@ export default function AddMeeting() {
       // Navigate immediately, don't wait for extraction
       navigate(`/meeting/${data.id}`);
     } catch (error: any) {
-      toast({
-        title: "Error adding meeting",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.errors) {
+        // Zod validation errors
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err: any) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors);
+        
+        toast({
+          title: "Validation Error",
+          description: "Please check the form for errors.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error adding meeting",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -144,11 +166,15 @@ export default function AddMeeting() {
                     id="meeting_date"
                     type="date"
                     value={formData.meeting_date}
+                    max={new Date().toISOString().split('T')[0]}
                     onChange={(e) =>
                       setFormData({ ...formData, meeting_date: e.target.value })
                     }
-                    required
+                    className={errors.meeting_date ? "border-destructive" : ""}
                   />
+                  {errors.meeting_date && (
+                    <p className="text-sm text-destructive">{errors.meeting_date}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -177,35 +203,47 @@ export default function AddMeeting() {
                 <Label htmlFor="title">Meeting Title *</Label>
                 <Input
                   id="title"
-                  placeholder="Discovery call with CFO"
+                  placeholder="Discovery call with CTO"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  required
+                  className={errors.title ? "border-destructive" : ""}
                 />
+                {errors.title && (
+                  <p className="text-sm text-destructive">{errors.title}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="raw_notes">Meeting Notes *</Label>
                 <Textarea
                   id="raw_notes"
-                  placeholder="Paste your meeting notes here... (emails, call transcripts, notes, etc.)"
+                  placeholder="Paste your meeting notes here. Include stakeholder names, quotes, objections, and key discussion points..."
                   value={formData.raw_notes}
                   onChange={(e) =>
                     setFormData({ ...formData, raw_notes: e.target.value })
                   }
                   rows={12}
-                  required
+                  className={errors.raw_notes ? "border-destructive" : ""}
                 />
-                <p className="text-sm text-muted-foreground">
-                  You can paste call transcripts, emails, or any meeting notes. 
-                  AI will extract stakeholders and insights from this.
+                {errors.raw_notes && (
+                  <p className="text-sm text-destructive">{errors.raw_notes}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  AI will automatically extract stakeholders, quotes, objections, and risks from your notes.
                 </p>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Saving..." : "Save Meeting"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving & Analyzing...
+                  </>
+                ) : (
+                  "Save Meeting"
+                )}
               </Button>
             </form>
           </CardContent>
