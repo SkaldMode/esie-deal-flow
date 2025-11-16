@@ -1,4 +1,4 @@
-# Welcome to your Lovable Project! Hey there! ;XDD
+# Welcome to your Lovable Project! Hey there you mofo.
 
 ## Project info
 
