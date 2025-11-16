@@ -121,6 +121,92 @@ export type Database = {
           },
         ]
       }
+      stakeholder_mentions: {
+        Row: {
+          created_at: string | null
+          id: string
+          meeting_id: string
+          stakeholder_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          meeting_id: string
+          stakeholder_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          meeting_id?: string
+          stakeholder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholder_mentions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stakeholder_mentions_stakeholder_id_fkey"
+            columns: ["stakeholder_id"]
+            isOneToOne: false
+            referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stakeholders: {
+        Row: {
+          communication_style: string | null
+          created_at: string | null
+          deal_id: string
+          department: string | null
+          id: string
+          name: string
+          power: string | null
+          role_title: string
+          stance: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          communication_style?: string | null
+          created_at?: string | null
+          deal_id: string
+          department?: string | null
+          id?: string
+          name: string
+          power?: string | null
+          role_title: string
+          stance?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          communication_style?: string | null
+          created_at?: string | null
+          deal_id?: string
+          department?: string | null
+          id?: string
+          name?: string
+          power?: string | null
+          role_title?: string
+          stance?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholders_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -17,6 +17,7 @@ Analyze the provided meeting notes and extract the following information in a st
    - department: Department or business unit (if mentioned)
    - stance_guess: "positive", "neutral", or "negative" based on their attitude toward the deal
    - power_guess: "high", "medium", or "low" - their decision-making power
+   - communication_style: Brief suggestion on how to communicate with them (e.g., "data-driven, prefers detailed analysis" or "results-focused, values brevity")
 
 2. **Quotes**: Direct quotes or paraphrased statements from stakeholders
    - speaker_name: Who said it
@@ -148,6 +149,75 @@ serve(async (req) => {
     }
 
     console.log('Extraction completed successfully');
+
+    // Auto-create stakeholder profiles and link to meeting
+    try {
+      // Get meeting details to get deal_id and user_id
+      const { data: meetingData, error: meetingFetchError } = await supabase
+        .from('meetings')
+        .select('deal_id, user_id')
+        .eq('id', meetingId)
+        .single();
+
+      if (meetingFetchError) throw meetingFetchError;
+
+      const { deal_id, user_id } = meetingData;
+
+      // Process each extracted stakeholder
+      for (const stakeholder of (extracted.stakeholders || [])) {
+        if (!stakeholder.name || !stakeholder.role_title) continue;
+
+        // Try to insert stakeholder profile (will be ignored if duplicate exists)
+        const { data: stakeholderProfile, error: insertError } = await supabase
+          .from('stakeholders')
+          .insert({
+            deal_id,
+            user_id,
+            name: stakeholder.name,
+            role_title: stakeholder.role_title,
+            department: stakeholder.department || null,
+            stance: stakeholder.stance_guess || null,
+            power: stakeholder.power_guess || null,
+            communication_style: stakeholder.communication_style || null
+          })
+          .select()
+          .maybeSingle();
+
+        // If insert failed due to duplicate, fetch the existing stakeholder
+        let stakeholderId;
+        if (insertError && insertError.code === '23505') {
+          // Unique constraint violation - stakeholder already exists
+          const { data: existing } = await supabase
+            .from('stakeholders')
+            .select('id')
+            .eq('deal_id', deal_id)
+            .eq('name', stakeholder.name)
+            .eq('role_title', stakeholder.role_title)
+            .single();
+          
+          stakeholderId = existing?.id;
+        } else if (stakeholderProfile) {
+          stakeholderId = stakeholderProfile.id;
+        }
+
+        // Create stakeholder mention link (if stakeholder exists)
+        if (stakeholderId) {
+          await supabase
+            .from('stakeholder_mentions')
+            .insert({
+              stakeholder_id: stakeholderId,
+              meeting_id: meetingId
+            })
+            .select()
+            .maybeSingle(); // Ignore if duplicate mention
+        }
+      }
+
+      console.log('Stakeholder profiles created/updated successfully');
+    } catch (stakeholderError) {
+      // Log but don't fail the entire extraction if stakeholder creation fails
+      console.error('Error creating stakeholder profiles:', stakeholderError);
+    }
 
     return new Response(
       JSON.stringify({ 
