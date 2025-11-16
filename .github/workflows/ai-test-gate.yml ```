@@ -1,0 +1,6 @@
+# Placeholder: Find a real Anthropic action
+  - name: Generate Unit Tests (Using Claude)
+    id: llm_generation
+    uses: marketplace-action/claude-test-gen@v1 # <--- REPLACE THIS LINE
+    with:
+      #... rest of the content...
