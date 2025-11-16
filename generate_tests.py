@@ -47,9 +47,8 @@ def generate_and_save_tests():
         # Check if content list exists and has at least one item
         if message.content and len(message.content) > 0:
             
-            # *** DEFINITIVE FIX: Access the first item in the list ***
-            # We now correctly index the list before accessing properties
-            content_block = message.content
+            # *** DEFINITIVE FIX: Access the first item in the list using  ***
+            content_block = message.content 
             
             # Now safely check properties on the individual content_block object
             if content_block.type == "text" and hasattr(content_block, 'text'):
