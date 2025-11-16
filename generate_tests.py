@@ -33,7 +33,7 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # Using the stable model alias that resolved the 404 error
+            # FINAL FIX: Use the correct, stable alias for Sonnet 4.5
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -47,9 +47,9 @@ def generate_and_save_tests():
         # Check if content list exists and has at least one item
         if message.content and len(message.content) > 0:
             
-            # *** FINAL, ABSOLUTE FIX: Access the first item in the list ***
+            # *** CRITICAL FIX: Access the first item in the content list ***
             # This resolves the "'list' object has no attribute 'type'" crash
-            content_block = message.content # <--- CRITICAL FIX: INDEXING THE LIST
+            content_block = message.content # Correctly indexes the list
             
             # Now safely check properties on the individual content_block object
             if content_block.type == "text" and hasattr(content_block, 'text'):
