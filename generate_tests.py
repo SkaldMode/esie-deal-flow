@@ -4,7 +4,6 @@ from anthropic import Anthropic
 
 def generate_and_save_tests():
     # 1. Read the API Key and PR Diff from environment variables
-    # The API key is securely loaded by the GitHub Action environment
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
     PR_DIFF = os.environ.get("PR_DIFF")
     
@@ -14,20 +13,18 @@ def generate_and_save_tests():
         
     if not PR_DIFF:
         print("Error: PR_DIFF (git diff) not found.")
-        # If the diff is empty (e.g., in a non-PR run), we exit gracefully
-        # In a real PR, this should contain the changes.
         return
         
     # 2. Configure the Claude client
-    client = Anthropic(api_key=ANTHROPIC_API_KEY) #
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
     
     # 3. Define the instruction (System Prompt) and the user input (PR Diff)
-    # This is the prompt engineering step to ensure high-fidelity output.
     system_prompt = (
-        "You are an expert Test Engineer for a production system. "
-        "Your task is to generate comprehensive unit tests for the functions modified in the pull request diff. "
-        "You must use the Pytest framework and adhere strictly to idiomatic Python testing practices. "
-        "Return ONLY the Python code block in a fenced Markdown format (e.g., ```python...```). "
+        "You are an expert Test Engineer for a Python production system using the Pytest framework. "
+        "Your primary goal is to generate robust, high-coverage unit tests for the functions modified in the pull request diff. "
+        "You must only use standard Python libraries or dependencies already defined in the project's requirements. "
+        "Crucially, ensure tests include assertions that validate behavior, not just execution, and aim for high branch coverage. "
+        "Return ONLY the Python code block in a fenced Markdown format with the language tag (e.g., ```python...```). "
         "Do not include any explanation, comments, or extra text outside of the code block."
     )
     
@@ -36,7 +33,8 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            model="claude-3-5-sonnet",
+            # Correct model alias confirmed working (resolved 404 error)
+            model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
             messages=[
@@ -44,15 +42,30 @@ def generate_and_save_tests():
             ]
         )
         
-        # 5. Save the raw output to a file for later parsing
-        # We save the raw response (which includes the markdown fences)
-        with open("claude_output.txt", "w") as f:
-            # We assume the content is in the first item of the content list
-            f.write(message.content.text if message.content else "")
-            
-        print("Successfully generated tests and saved to claude_output.txt")
+        # 5. Process and save the output (FIXED)
         
+        # Check if content list exists and has at least one item
+        if message.content and len(message.content) > 0:
+            
+            # FIXED: Access the first content block in the list
+            content_block = message.content[0]
+            
+            # Now we can safely check the type attribute
+            if content_block.type == "text" and hasattr(content_block, 'text'):
+                code_output = content_block.text
+                
+                with open("claude_output.txt", "w") as f:
+                    f.write(code_output)
+                    
+                print("Successfully generated tests and saved to claude_output.txt")
+                return # Exit successfully
+
+        # If execution reaches here, Claude returned something unexpected or non-text
+        print("Error: Claude returned unparseable or non-text content.")
+        sys.exit(1)
+            
     except Exception as e:
+        # This handles network or API errors
         print(f"An error occurred during API call: {e}")
         sys.exit(1)
 
