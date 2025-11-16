@@ -1,6 +1,72 @@
-# Placeholder: Find a real Anthropic action
-  - name: Generate Unit Tests (Using Claude)
-    id: llm_generation
-    uses: marketplace-action/claude-test-gen@v1 # <--- REPLACE THIS LINE
-    with:
-      #... rest of the content...
+name: AI Test Generation Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize] # Runs on new PR or when new commits are pushed
+
+jobs:
+  ai_verification:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read 
+      pull-requests: write # Required for posting coverage comments
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # --- SETUP: Install dependencies including the Anthropic SDK ---
+      - name: Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies (Including Anthropic SDK)
+        # We need the Anthropic library to talk to Claude's API
+        run: pip install anthropic pytest pytest-cov 
+        
+      # --- CRITICAL STEP 1: Get the PR Diff ---
+      - name: Get Pull Request Diff
+        id: pr_diff
+        run: |
+          # Use the GitHub CLI to get the raw diff of changes
+          DIFF_CONTENT=$(gh pr diff ${{ github.event.pull_request.number }} --patch --repo ${{ github.repository }})
+          # Set the diff content as an output variable for the next step (the Python script)
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          echo "$DIFF_CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        env:
+          # Use the GITHUB_TOKEN to securely access the PR details [1]
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      # --- CRITICAL STEP 2: Execute the Claude Test Generation Script ---
+      - name: Execute AI Test Generation Script
+        # This calls the python script we created, passing the necessary environment variables
+        run: python generate_tests.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_DIFF: ${{ env.PR_DIFF }} # Pass the diff content to the script
+      
+      # --- CRITICAL STEP 3: PARSING THE OUTPUT ---
+      # This strips the Markdown fences (```) to leave only executable Python code. [2, 3]
+      - name: Extract Raw Python Code
+        run: |
+          # 'sed' removes lines starting with triple backticks (```) or (```python), 
+          # leaving only the raw, executable Python code.
+          sed '/^```/d' claude_output.txt > ai_generated_tests.py
+          
+      # --- EXECUTION AND REPORTING STAGES ---
+      - name: Run Tests
+        # Executes the combined test suite (existing tests + AI-generated tests)
+        run: |
+          # Pytest executes tests, generates coverage report (xml), and JUnit report
+          # It includes the new ai_generated_tests.py file automatically if placed in the right directory
+          pytest --cov --cov-report=xml --junitxml=results.xml
+
+      - name: Post Coverage Summary to PR
+        # This action posts a comment to the PR with coverage results [4]
+        uses: romeovs/code-coverage-summary-action@v1.5.0 
+        with:
+          filename: coverage.xml
+          format: markdown
+          fail_below_min: true # Fails the check if coverage drops
