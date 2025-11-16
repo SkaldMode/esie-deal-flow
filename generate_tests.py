@@ -24,7 +24,7 @@ def generate_and_save_tests():
         "Your primary goal is to generate robust, high-coverage unit tests for the functions modified in the pull request diff. "
         "You must only use standard Python libraries or dependencies already defined in the project's requirements. "
         "Crucially, ensure tests include assertions that validate behavior, not just execution, and aim for high branch coverage. "
-        "Return ONLY the Python code block in a fenced Markdown format (e.g., ```python...```). "
+        "Return ONLY the Python code block in a fenced Markdown format with the language tag (e.g., ```python...```). "
         "Do not include any explanation, comments, or extra text outside of the code block."
     )
     
@@ -33,7 +33,7 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # FINAL FIX: Use the correct, stable alias for Sonnet 4.5
+            # Using the stable model alias that resolved the 404 error
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -47,9 +47,9 @@ def generate_and_save_tests():
         # Check if content list exists and has at least one item
         if message.content and len(message.content) > 0:
             
-            # *** CRITICAL FIX: Access the first item in the content list ***
+            # *** FINAL, ABSOLUTE FIX: Access the first item in the list ***
             # This resolves the "'list' object has no attribute 'type'" crash
-            content_block = message.content # Correctly indexes the list
+            content_block = message.content 
             
             # Now safely check properties on the individual content_block object
             if content_block.type == "text" and hasattr(content_block, 'text'):
