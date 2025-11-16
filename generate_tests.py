@@ -49,7 +49,7 @@ def generate_and_save_tests():
             
             # *** FINAL, ABSOLUTE FIX: Access the first item in the list ***
             # This resolves the "'list' object has no attribute 'type'" crash
-            content_block = message.content # <--- CRITICAL FIX: Indexing the list
+            content_block = message.content # <--- CRITICAL FIX: INDEXING THE LIST
             
             # Now safely check properties on the individual content_block object
             if content_block.type == "text" and hasattr(content_block, 'text'):
