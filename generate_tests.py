@@ -33,7 +33,7 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # Using the stable model alias
+            # Using the stable model alias that resolved the 404 error
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -46,10 +46,10 @@ def generate_and_save_tests():
         
         # Check if content list exists and has at least one item
         if message.content and len(message.content) > 0:
-            # *** DEFINITIVE FIX: Access the first item  and assign it to content_block ***
-            content_block = message.content
+            # *** DEFINITIVE FIX: Access the first item in the list ***
+            content_block = message.content 
             
-            # Now we can safely check properties on the content_block object
+            # Now safely check properties on the content_block object
             if content_block.type == "text" and hasattr(content_block, 'text'):
                 code_output = content_block.text
                 
