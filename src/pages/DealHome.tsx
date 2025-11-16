@@ -342,12 +342,44 @@ export default function DealHome() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm mb-2">No risks identified</p>
-                <Button variant="link" size="sm">
-                  Track risks
-                </Button>
-              </div>
+              {recentMeeting?.risks && Array.isArray(recentMeeting.risks) && recentMeeting.risks.length > 0 ? (
+                <div className="space-y-3">
+                  {recentMeeting.risks.slice(0, 3).map((risk: any, idx: number) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Badge 
+                        variant={
+                          risk.severity === 'high' ? 'destructive' :
+                          risk.severity === 'medium' ? 'default' : 'secondary'
+                        }
+                        className="mt-0.5"
+                      >
+                        {risk.severity}
+                      </Badge>
+                      <p className="text-sm flex-1">{risk.risk_description}</p>
+                    </div>
+                  ))}
+                  {recentMeeting.risks.length > 3 && (
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      +{recentMeeting.risks.length - 3} more risks
+                    </p>
+                  )}
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="p-0 h-auto"
+                    onClick={() => navigate(`/meeting/${recentMeeting.id}`)}
+                  >
+                    View all risks →
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm mb-2">No risks identified yet</p>
+                  <p className="text-xs">
+                    Add meeting notes to track risks
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

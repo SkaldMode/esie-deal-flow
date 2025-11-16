@@ -277,6 +277,21 @@ serve(async (req) => {
 
         console.log('Relationships processed successfully');
       }
+
+      // Trigger stakeholder insights update in background
+      try {
+        console.log('Triggering stakeholder insights update...');
+        fetch(`${supabaseUrl}/functions/v1/update-stakeholder-insights`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ meetingId, dealId: deal_id })
+        }).catch(err => console.error('Background update failed:', err));
+      } catch (bgError) {
+        console.error('Failed to trigger background update:', bgError);
+      }
     } catch (stakeholderError) {
       // Log but don't fail the entire extraction if stakeholder creation fails
       console.error('Error creating stakeholder profiles:', stakeholderError);
