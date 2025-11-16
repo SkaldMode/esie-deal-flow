@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Building2 } from "lucide-react";
+import { ArrowLeft, User, Building2, Filter } from "lucide-react";
 
 interface Stakeholder {
   id: string;
@@ -30,8 +31,11 @@ export default function Stakeholders() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [filteredStakeholders, setFilteredStakeholders] = useState<Stakeholder[]>([]);
   const [deal, setDeal] = useState<Deal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stanceFilter, setStanceFilter] = useState<string>("all");
+  const [powerFilter, setPowerFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!user || !dealId) {
@@ -70,6 +74,7 @@ export default function Stakeholders() {
         })) || [];
 
         setStakeholders(transformedData);
+        setFilteredStakeholders(transformedData);
       } catch (error: any) {
         toast({
           title: "Error loading stakeholders",
@@ -84,6 +89,21 @@ export default function Stakeholders() {
 
     fetchData();
   }, [user, dealId, navigate, toast]);
+
+  // Apply filters whenever filter state or stakeholders change
+  useEffect(() => {
+    let filtered = [...stakeholders];
+
+    if (stanceFilter !== "all") {
+      filtered = filtered.filter(s => s.stance === stanceFilter);
+    }
+
+    if (powerFilter !== "all") {
+      filtered = filtered.filter(s => s.power === powerFilter);
+    }
+
+    setFilteredStakeholders(filtered);
+  }, [stanceFilter, powerFilter, stakeholders]);
 
   if (loading) {
     return (
@@ -117,6 +137,72 @@ export default function Stakeholders() {
           </p>
         </div>
 
+        {/* Filters */}
+        {stakeholders.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Filter className="h-4 w-4" />
+                Filter Stakeholders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="text-sm font-medium mb-2 block">Stance</label>
+                  <Select value={stanceFilter} onValueChange={setStanceFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Stances</SelectItem>
+                      <SelectItem value="positive">Positive</SelectItem>
+                      <SelectItem value="neutral">Neutral</SelectItem>
+                      <SelectItem value="negative">Negative</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label className="text-sm font-medium mb-2 block">Power Level</label>
+                  <Select value={powerFilter} onValueChange={setPowerFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Power Levels</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(stanceFilter !== "all" || powerFilter !== "all") && (
+                  <div className="flex items-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setStanceFilter("all");
+                        setPowerFilter("all");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results count */}
+        {stakeholders.length > 0 && (
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredStakeholders.length} of {stakeholders.length} stakeholder{stakeholders.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
+
         {stakeholders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
@@ -130,10 +216,33 @@ export default function Stakeholders() {
               </Button>
             </CardContent>
           </Card>
+        ) : filteredStakeholders.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No stakeholders match filters</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Try adjusting your filters to see more results
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStanceFilter("all");
+                  setPowerFilter("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {stakeholders.map((stakeholder) => (
-              <Card key={stakeholder.id} className="hover:shadow-md transition-shadow">
+            {filteredStakeholders.map((stakeholder) => (
+              <Card 
+                key={stakeholder.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(`/deal/${dealId}/stakeholder/${stakeholder.id}`)}
+              >
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
