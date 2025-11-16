@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare, Presentation } from "lucide-react";
+import { 
+  ArrowLeft, DollarSign, Calendar, FileText, Users, AlertTriangle, 
+  Video, Plus, Network, MessageSquare, Presentation, Sparkles, 
+  Target, TrendingUp, ThumbsUp
+} from "lucide-react";
 import SimulationDebrief from "@/components/SimulationDebrief";
 
 interface Deal {
@@ -85,7 +89,7 @@ export default function DealHome() {
         }
       } catch (error: any) {
         toast({
-          title: "Error loading deal",
+          title: "Oops! Something went wrong",
           description: error.message,
           variant: "destructive",
         });
@@ -101,7 +105,10 @@ export default function DealHome() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading deal...</p>
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+          <p className="text-lg text-foreground">Loading your mission...</p>
+        </div>
       </div>
     );
   }
@@ -120,6 +127,12 @@ export default function DealHome() {
       year: "numeric",
       month: "long",
     });
+  };
+
+  const getStanceEmoji = (stance: string | null) => {
+    if (stance === 'positive') return '👍';
+    if (stance === 'negative') return '⚠️';
+    return '🤔';
   };
 
   return (
@@ -158,89 +171,122 @@ export default function DealHome() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Key Metrics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Account</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{deal.account_name}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Potential Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+        {/* Hero Section */}
+        <div className="mb-12 text-center space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <Target className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold">
+              Let's win {deal.account_name} 🎯
+            </h1>
+          </div>
+          <div className="flex items-center justify-center gap-8 text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-lg font-semibold text-foreground">
                 {formatCurrency(deal.deal_value, deal.currency)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="outline" className="text-base font-semibold">
-                {deal.stage}
-              </Badge>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Expected Close</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatDate(deal.expected_close_month)}
-              </div>
-            </CardContent>
-          </Card>
+              </span>
+            </div>
+            <Badge variant="outline" className="text-base px-4 py-1">
+              {deal.stage}
+            </Badge>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>{formatDate(deal.expected_close_month)}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <Button 
-            className="gap-2"
-            onClick={() => navigate(`/deal/${deal.id}/add-meeting`)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Meeting Notes
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/prep-brief`)}>
-            <Presentation className="h-4 w-4" />
-            Generate Prep Brief
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}>
-            <Users className="h-4 w-4" />
-            View Stakeholders
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholder-map`)}>
-            <Network className="h-4 w-4" />
-            Relationship Map
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/simulation-setup`)}>
-            <Video className="h-4 w-4" />
-            Run Simulation
-          </Button>
+        {/* What would you like to do? */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6 text-center">
+            What would you like to do?
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50"
+              onClick={() => navigate(`/deal/${deal.id}/add-meeting`)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg">Just had a call?</CardTitle>
+                <CardDescription>Drop your notes here and I'll extract the key insights</CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50"
+              onClick={() => navigate(`/deal/${deal.id}/prep-brief`)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Presentation className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg">Need a game plan?</CardTitle>
+                <CardDescription>I'll create a personalized prep brief for your next meeting</CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50"
+              onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg">Who's who?</CardTitle>
+                <CardDescription>View all the key players and their roles</CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50"
+              onClick={() => navigate(`/deal/${deal.id}/stakeholder-map`)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Network className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg">See connections</CardTitle>
+                <CardDescription>Visualize how everyone's related</CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50"
+              onClick={() => navigate(`/deal/${deal.id}/simulation-setup`)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Video className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg">Practice makes perfect</CardTitle>
+                <CardDescription>Run a simulation with AI stakeholders</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
         </div>
 
-        {/* Three Main Widgets */}
+        {/* Latest Intel */}
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          {/* Next Meeting Widget */}
-          <Card>
+          {/* Latest Intel */}
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Recent Meeting
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                Latest Intel
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -259,90 +305,85 @@ export default function DealHome() {
                   <Button 
                     variant="link" 
                     size="sm" 
-                    className="p-0 h-auto"
+                    className="p-0 h-auto text-primary"
                     onClick={() => navigate(`/meeting/${recentMeeting.id}`)}
                   >
-                    View details →
+                    Read the full story →
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm mb-2">No meetings yet</p>
+                  <p className="text-sm mb-3">No intel yet!</p>
                   <Button 
-                    variant="link" 
+                    variant="outline" 
                     size="sm"
                     onClick={() => navigate(`/deal/${deal.id}/add-meeting`)}
                   >
-                    Add your first meeting
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add your first notes
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Stakeholders Widget */}
-          <Card>
+          {/* Key Players */}
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Stakeholders
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5 text-primary" />
+                Key Players
               </CardTitle>
             </CardHeader>
             <CardContent>
               {stakeholders.length > 0 ? (
                 <div className="space-y-3">
                   {stakeholders.slice(0, 3).map((stakeholder) => (
-                    <div key={stakeholder.id} className="flex items-start justify-between">
+                    <div key={stakeholder.id} className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="font-semibold text-sm">{stakeholder.name}</p>
+                        <p className="font-semibold text-sm flex items-center gap-2">
+                          {getStanceEmoji(stakeholder.stance)}
+                          {stakeholder.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {stakeholder.role_title}
-                          {stakeholder.department && ` • ${stakeholder.department}`}
                         </p>
                       </div>
-                      <div className="flex gap-1">
-                        {stakeholder.stance && (
-                          <Badge 
-                            variant={
-                              stakeholder.stance === 'positive' ? 'default' :
-                              stakeholder.stance === 'negative' ? 'destructive' : 'secondary'
-                            }
-                            className="text-xs"
-                          >
-                            {stakeholder.stance}
-                          </Badge>
-                        )}
-                        {stakeholder.power && (
-                          <Badge variant="outline" className="text-xs">
-                            {stakeholder.power}
-                          </Badge>
-                        )}
-                      </div>
+                      {stakeholder.power && (
+                        <Badge variant="outline" className="text-xs">
+                          {stakeholder.power}
+                        </Badge>
+                      )}
                     </div>
                   ))}
                   {stakeholders.length > 3 && (
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      +{stakeholders.length - 3} more
-                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 h-auto w-full text-primary"
+                      onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}
+                    >
+                      +{stakeholders.length - 3} more people →
+                    </Button>
                   )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm mb-2">No stakeholders yet</p>
+                  <p className="text-sm mb-2">No players tracked yet</p>
                   <p className="text-xs">
-                    Add meeting notes to auto-extract stakeholders
+                    Add meeting notes and I'll spot them for you!
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Risks Widget */}
-          <Card>
+          {/* Watch Out For */}
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Risks
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+                Watch Out For
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -355,7 +396,7 @@ export default function DealHome() {
                           risk.severity === 'high' ? 'destructive' :
                           risk.severity === 'medium' ? 'default' : 'secondary'
                         }
-                        className="mt-0.5"
+                        className="mt-0.5 text-xs"
                       >
                         {risk.severity}
                       </Badge>
@@ -363,24 +404,24 @@ export default function DealHome() {
                     </div>
                   ))}
                   {recentMeeting.risks.length > 3 && (
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      +{recentMeeting.risks.length - 3} more risks
-                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 h-auto w-full text-primary"
+                      onClick={() => navigate(`/meeting/${recentMeeting.id}`)}
+                    >
+                      See {recentMeeting.risks.length - 3} more →
+                    </Button>
                   )}
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    className="p-0 h-auto"
-                    onClick={() => navigate(`/meeting/${recentMeeting.id}`)}
-                  >
-                    View all risks →
-                  </Button>
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm mb-2">No risks identified yet</p>
+                  <p className="text-sm mb-2 flex items-center justify-center gap-2">
+                    <ThumbsUp className="h-4 w-4" />
+                    All clear!
+                  </p>
                   <p className="text-xs">
-                    Add meeting notes to track risks
+                    No risks spotted yet
                   </p>
                 </div>
               )}
@@ -388,16 +429,16 @@ export default function DealHome() {
           </Card>
         </div>
 
-        {/* Simulations Section */}
+        {/* Practice Sessions */}
         {simulations.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Recent Simulations
+                <Video className="h-5 w-5 text-primary" />
+                Your Practice Sessions
               </CardTitle>
               <CardDescription>
-                AI-generated debriefs from your practice sessions
+                Here's what I noticed from your simulations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -432,14 +473,17 @@ export default function DealHome() {
           </Card>
         )}
 
-        {/* Internal Notes Section */}
+        {/* Your Private Notes */}
         {deal.internal_notes && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Internal Notes
+                <FileText className="h-5 w-5 text-primary" />
+                Your Private Notes
               </CardTitle>
+              <CardDescription>
+                Just between us 🤫
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground whitespace-pre-wrap">
