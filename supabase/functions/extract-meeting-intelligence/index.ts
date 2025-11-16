@@ -6,46 +6,37 @@ import { getCorsHeaders, handleCorsPreflightResponse } from "../_shared/cors.ts"
 
 const corsHeaders = getCorsHeaders();
 
-// Central extraction prompt
+// Simplified extraction prompt - only names and risks
 const EXTRACTION_PROMPT = `You are an AI assistant that extracts key information from enterprise sales meeting notes.
 
 Analyze the provided meeting notes and extract the following information in a structured format:
 
-1. **Stakeholders**: People mentioned in the meeting with their details
-   - name: Full name
-   - role_title: Job title/role
-   - department: Department or business unit (if mentioned)
-   - stance_guess: "positive", "neutral", or "negative" based on their attitude toward the deal
-   - power_guess: "high", "medium", or "low" - their decision-making power
-   - communication_style: Brief suggestion on how to communicate with them (e.g., "data-driven, prefers detailed analysis" or "results-focused, values brevity")
+1. **Stakeholders**: People mentioned in the meeting
+   - name: Full name of the person
+   - role_title: Job title or role (e.g., "VP Engineering", "CTO", "Product Manager")
 
-2. **Quotes**: Direct quotes or paraphrased statements from stakeholders
-   - speaker_name: Who said it
-   - quote_text: The actual quote or paraphrase
-   - context: Brief context about when/why this was said
-
-3. **Objections**: Concerns or objections raised during the meeting
-   - objection_text: Description of the objection
-   - source_name: Who raised it (if known)
-
-4. **Risks**: Potential risks or red flags identified
-   - risk_description: Description of the risk
+2. **Risks**: Potential risks or red flags identified
+   - risk_description: Clear description of the risk or concern
    - severity: "high", "medium", or "low"
 
-5. **Approval Clues**: Signs of buying signals or approval process information
-   - clue_text: Details about the approval signal
-   - source_name: Who provided this signal (if applicable)
+IMPORTANT: Focus on extracting ONLY stakeholder names with their job titles and any risks mentioned.
+Do not extract quotes, objections, or other details.
 
-6. **Relationships** (infer from context, role titles, and meeting dynamics):
-   - from_name: Person who has the relationship
-   - to_name: Person the relationship is with
-   - relationship_type: "reports_to", "influences", or "collaborates_with"
-   - confidence: Your confidence level (0.0 to 1.0) in this relationship inference
-   - reason: Brief explanation of why you inferred this relationship
-
-Return ONLY a valid JSON object with these exact keys: stakeholders, quotes, objections, risks, approval_clues, relationships
+Return ONLY a valid JSON object with these exact keys: stakeholders, risks
 Each key should be an array of objects following the structures described above.
-If a category has no items, return an empty array for that key.`;
+If a category has no items, return an empty array for that key.
+
+Example format:
+{
+  "stakeholders": [
+    {"name": "Sarah Chen", "role_title": "VP Engineering"},
+    {"name": "John Smith", "role_title": "CTO"}
+  ],
+  "risks": [
+    {"risk_description": "Timeline is very aggressive", "severity": "high"},
+    {"risk_description": "Budget approval pending", "severity": "medium"}
+  ]
+}`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -151,27 +142,21 @@ serve(async (req) => {
       throw new Error('Failed to parse AI response as JSON');
     }
 
-    // Validate structure
-    const requiredKeys = ['stakeholders', 'quotes', 'objections', 'risks', 'approval_clues', 'relationships'];
+    // Validate structure - simplified to only stakeholders and risks
+    const requiredKeys = ['stakeholders', 'risks'];
     const missingKeys = requiredKeys.filter(key => !extracted.hasOwnProperty(key));
-    
+
     if (missingKeys.length > 0) {
       console.error('Missing keys in AI response:', missingKeys);
-      // Don't fail if only relationships are missing (backward compatibility)
-      if (missingKeys.some(k => k !== 'relationships')) {
-        throw new Error(`AI response missing required keys: ${missingKeys.join(', ')}`);
-      }
+      throw new Error(`AI response missing required keys: ${missingKeys.join(', ')}`);
     }
 
-    // Save to database
+    // Save to database - only stakeholders and risks
     const { error: updateError } = await supabase
       .from('meetings')
       .update({
         stakeholders: extracted.stakeholders || [],
-        quotes: extracted.quotes || [],
-        objections: extracted.objections || [],
         risks: extracted.risks || [],
-        approval_clues: extracted.approval_clues || [],
         extraction_status: 'completed',
         extraction_error: null
       })
@@ -197,7 +182,7 @@ serve(async (req) => {
 
       const { deal_id, user_id } = meetingData;
 
-      // Process each extracted stakeholder
+      // Process each extracted stakeholder - simplified to only name and role
       for (const stakeholder of (extracted.stakeholders || [])) {
         if (!stakeholder.name || !stakeholder.role_title) continue;
 
@@ -209,10 +194,8 @@ serve(async (req) => {
             user_id,
             name: stakeholder.name,
             role_title: stakeholder.role_title,
-            department: stakeholder.department || null,
-            stance: stakeholder.stance_guess || null,
-            power: stakeholder.power_guess || null,
-            communication_style: stakeholder.communication_style || null
+            // Removed: department, stance, power, communication_style
+            // These can be filled manually by users later
           })
           .select()
           .maybeSingle();
@@ -228,7 +211,7 @@ serve(async (req) => {
             .eq('name', stakeholder.name)
             .eq('role_title', stakeholder.role_title)
             .single();
-          
+
           stakeholderId = existing?.id;
         } else if (stakeholderProfile) {
           stakeholderId = stakeholderProfile.id;
@@ -249,73 +232,8 @@ serve(async (req) => {
 
       console.log('Stakeholder profiles created/updated successfully');
 
-      // Process relationships
-      if (extracted.relationships && extracted.relationships.length > 0) {
-        console.log(`Processing ${extracted.relationships.length} relationships`);
-        
-        // First, create a map of stakeholder names to IDs for this deal
-        const { data: allStakeholders } = await supabase
-          .from('stakeholders')
-          .select('id, name, role_title')
-          .eq('deal_id', deal_id);
-
-        const stakeholderMap = new Map();
-        allStakeholders?.forEach(s => {
-          const key = `${s.name.toLowerCase()}|${s.role_title.toLowerCase()}`;
-          stakeholderMap.set(key, s.id);
-        });
-
-        // Process each relationship
-        for (const rel of extracted.relationships) {
-          if (!rel.from_name || !rel.to_name || !rel.relationship_type) continue;
-
-          // Find stakeholder IDs
-          const fromKey = `${rel.from_name.toLowerCase()}`;
-          const toKey = `${rel.to_name.toLowerCase()}`;
-          
-          let fromId = null;
-          let toId = null;
-
-          // Search for matching stakeholders by name
-          for (const [key, id] of stakeholderMap.entries()) {
-            const [name] = key.split('|');
-            if (name === fromKey) fromId = id;
-            if (name === toKey) toId = id;
-          }
-
-          // Only create relationship if both stakeholders exist
-          if (fromId && toId && fromId !== toId) {
-            await supabase
-              .from('stakeholder_relationships')
-              .insert({
-                deal_id,
-                from_stakeholder_id: fromId,
-                to_stakeholder_id: toId,
-                relationship_type: rel.relationship_type,
-                confidence: rel.confidence || 0.5
-              })
-              .select()
-              .maybeSingle(); // Ignore if duplicate relationship
-          }
-        }
-
-        console.log('Relationships processed successfully');
-      }
-
-      // Trigger stakeholder insights update in background
-      try {
-        console.log('Triggering stakeholder insights update...');
-        fetch(`${supabaseUrl}/functions/v1/update-stakeholder-insights`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ meetingId, dealId: deal_id })
-        }).catch(err => console.error('Background update failed:', err));
-      } catch (bgError) {
-        console.error('Failed to trigger background update:', bgError);
-      }
+      // Note: Relationship processing and learning loop removed for MVP simplification
+      // These features are deferred to post-MVP
     } catch (stakeholderError) {
       // Log but don't fail the entire extraction if stakeholder creation fails
       console.error('Error creating stakeholder profiles:', stakeholderError);
