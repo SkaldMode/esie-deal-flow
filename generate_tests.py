@@ -42,28 +42,28 @@ def generate_and_save_tests():
             ]
         )
         
-        # 5. Process and save the output (FINAL, CORRECT FIX for the API response structure)
+       # 5. Process and save the output (Definitive Fix for Content Access)
         
-        # Check if the content list exists and is not empty
+        # Check if the content list exists and has at least one item
         if message.content and len(message.content) > 0:
-            # Access the first item in the list and check if it has the text attribute.
-            if hasattr(message.content, 'text'):
-                code_output = message.content.text
+            # We assume the generated text is in the first content block (index 0)
+            content_block = message.content
+            
+            # Check if this content block is of type 'text' and has the.text attribute
+            if content_block.type == "text" and hasattr(content_block, 'text'):
+                code_output = content_block.text
                 
                 with open("claude_output.txt", "w") as f:
                     f.write(code_output)
                     
                 print("Successfully generated tests and saved to claude_output.txt")
-                return # Exit on success
+                return # Exit successfully
             
-        # If execution reaches here, Claude returned something unexpected
-        print("Error: Claude returned unparseable content or an empty response.")
+        # If execution reaches here, Claude returned something unexpected or non-text
+        print("Error: Claude returned unparseable or non-text content.")
         sys.exit(1)
             
     except Exception as e:
         # This handles network or API errors
         print(f"An error occurred during API call: {e}")
         sys.exit(1)
-
-if __name__ == "__main__":
-    generate_and_save_tests()
