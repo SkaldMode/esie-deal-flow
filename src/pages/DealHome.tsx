@@ -27,6 +27,7 @@ export default function DealHome() {
   const { toast } = useToast();
   const [deal, setDeal] = useState<Deal | null>(null);
   const [recentMeeting, setRecentMeeting] = useState<any>(null);
+  const [stakeholders, setStakeholders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +55,17 @@ export default function DealHome() {
 
         if (meetingData) {
           setRecentMeeting(meetingData);
+        }
+
+        // Fetch stakeholder profiles for this deal
+        const { data: stakeholderData } = await supabase
+          .from("stakeholders")
+          .select("*")
+          .eq("deal_id", dealId)
+          .order("created_at", { ascending: false });
+
+        if (stakeholderData) {
+          setStakeholders(stakeholderData);
         }
       } catch (error: any) {
         toast({
@@ -187,7 +199,7 @@ export default function DealHome() {
             <Plus className="h-4 w-4" />
             Add Meeting Notes
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholders`)}>
             <Users className="h-4 w-4" />
             View Stakeholders
           </Button>
@@ -253,12 +265,51 @@ export default function DealHome() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm mb-2">No stakeholders mapped</p>
-                <Button variant="link" size="sm">
-                  Add stakeholders
-                </Button>
-              </div>
+              {stakeholders.length > 0 ? (
+                <div className="space-y-3">
+                  {stakeholders.slice(0, 3).map((stakeholder) => (
+                    <div key={stakeholder.id} className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm">{stakeholder.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {stakeholder.role_title}
+                          {stakeholder.department && ` • ${stakeholder.department}`}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        {stakeholder.stance && (
+                          <Badge 
+                            variant={
+                              stakeholder.stance === 'positive' ? 'default' :
+                              stakeholder.stance === 'negative' ? 'destructive' : 'secondary'
+                            }
+                            className="text-xs"
+                          >
+                            {stakeholder.stance}
+                          </Badge>
+                        )}
+                        {stakeholder.power && (
+                          <Badge variant="outline" className="text-xs">
+                            {stakeholder.power}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {stakeholders.length > 3 && (
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      +{stakeholders.length - 3} more
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm mb-2">No stakeholders yet</p>
+                  <p className="text-xs">
+                    Add meeting notes to auto-extract stakeholders
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

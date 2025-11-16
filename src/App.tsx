@@ -11,6 +11,7 @@ import DealHome from "./pages/DealHome";
 import ArchivedDeals from "./pages/ArchivedDeals";
 import AddMeeting from "./pages/AddMeeting";
 import MeetingDetails from "./pages/MeetingDetails";
+import Stakeholders from "./pages/Stakeholders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/create-deal" element={<CreateDeal />} />
             <Route path="/deal/:dealId" element={<DealHome />} />
             <Route path="/deal/:dealId/add-meeting" element={<AddMeeting />} />
+            <Route path="/deal/:dealId/stakeholders" element={<Stakeholders />} />
             <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
             <Route path="/archived-deals" element={<ArchivedDeals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
