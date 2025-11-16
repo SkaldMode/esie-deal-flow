@@ -60,7 +60,7 @@ jobs:
           pytest --cov --cov-report=xml --junitxml=results.xml
 
       - name: Post Coverage Summary to PR
-        uses: romeovs/code-coverage-summary-action@v1.5.0 
+        uses: uses: romeovs/code-coverage-summary-action@v1
         with:
           filename: coverage.xml
           format: markdown
