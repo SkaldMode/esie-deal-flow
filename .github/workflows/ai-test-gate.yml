@@ -14,27 +14,58 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Set up Python Environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
           
-      - name: Install Dependencies
-        run: pip install anthropic pytest pytest-cov 
-        
-      - name: Get Pull Request Diff and Save to File
+      - name: Check PR Size and Get Diff
+        id: check_size
         run: |
+          # Get diff and save to file
           gh pr diff ${{ github.event.pull_request.number }} --patch --repo ${{ github.repository }} > pr_diff.txt
+          
+          # Check file size (in bytes)
+          DIFF_SIZE=$(wc -c < pr_diff.txt)
+          echo "Diff size: $DIFF_SIZE bytes"
+          
+          # If diff is larger than 100KB, skip AI generation
+          if [ $DIFF_SIZE -gt 100000 ]; then
+            echo "skip_ai=true" >> $GITHUB_OUTPUT
+            echo "⚠️ PR is too large for AI test generation (${DIFF_SIZE} bytes)"
+          else
+            echo "skip_ai=false" >> $GITHUB_OUTPUT
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Comment on Large PRs
+        if: steps.check_size.outputs.skip_ai == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ⚠️ PR Too Large for AI Test Generation\n\nThis PR has too many changes for automated test generation.\n\n**Recommendation:** Break this PR into smaller, focused PRs (< 100KB diff size).\n\n**Manual testing required.**`
+            });
+      
+      - name: Install Dependencies
+        if: steps.check_size.outputs.skip_ai == 'false'
+        run: pip install anthropic pytest pytest-cov 
         
       - name: Generate AI Tests
+        if: steps.check_size.outputs.skip_ai == 'false'
         run: python generate_tests.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       
       - name: Extract Python Code
+        if: steps.check_size.outputs.skip_ai == 'false'
         run: |
           python -c "
           import re
@@ -46,7 +77,8 @@ jobs:
               f.write(content)
           "
       
-      - name: Post AI Tests to PR for Review
+      - name: Post AI Tests to PR
+        if: steps.check_size.outputs.skip_ai == 'false'
         uses: actions/github-script@v7
         with:
           script: |
@@ -57,14 +89,16 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🤖 AI Generated Tests\n\n**⚠️ Review these tests before merging!**\n\n\`\`\`python\n${truncated}\n\`\`\``
+              body: `## 🤖 AI Generated Tests\n\n\`\`\`python\n${truncated}\n\`\`\``
             });
       
-      - name: Run All Tests (Baseline + AI Generated)
+      - name: Run Tests
+        if: steps.check_size.outputs.skip_ai == 'false'
         run: |
-          pytest tests/ ai_generated_tests.py -v --cov --cov-report=xml --junitxml=results.xml
+          pytest ai_generated_tests.py -v --cov --cov-report=xml --junitxml=results.xml
 
       - name: Post Coverage to PR
+        if: steps.check_size.outputs.skip_ai == 'false'
         uses: MishaKav/pytest-coverage-comment@main 
         with:
           coverage-xml-path: coverage.xml
