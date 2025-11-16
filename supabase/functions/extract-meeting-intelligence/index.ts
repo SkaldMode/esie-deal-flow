@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAuth, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +54,13 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const { userId, error: authError } = await verifyAuth(req);
+    if (authError) {
+      console.error('Auth error:', authError);
+      return unauthorizedResponse(authError, corsHeaders);
+    }
+
     const { meetingId, rawNotes } = await req.json();
 
     if (!meetingId || !rawNotes) {
@@ -62,7 +70,18 @@ serve(async (req) => {
       );
     }
 
-    console.log('Starting extraction for meeting:', meetingId);
+    // Validate input
+    if (typeof rawNotes !== 'string' || rawNotes.length > 50000) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid input',
+          message: 'Meeting notes must be a string with maximum 50,000 characters'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Starting extraction for meeting:', meetingId, 'User:', userId);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

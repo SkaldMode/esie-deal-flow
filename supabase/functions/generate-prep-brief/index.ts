@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAuth, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,9 +13,23 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const { userId, error: authError } = await verifyAuth(req);
+    if (authError) {
+      console.error('Auth error:', authError);
+      return unauthorizedResponse(authError, corsHeaders);
+    }
+
     const { dealId } = await req.json();
 
-    console.log('Generate prep brief request:', { dealId });
+    if (!dealId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing dealId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Generate prep brief request:', { dealId, userId });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
