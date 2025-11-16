@@ -213,17 +213,22 @@ export default function SimulationChat() {
     if (!simulation) return;
 
     try {
-      await supabase
-        .from("simulations")
-        .update({
-          status: "completed",
-          ended_at: new Date().toISOString(),
-        })
-        .eq("id", simulation.id);
+      // Show loading toast
+      toast({
+        title: "Ending simulation",
+        description: "Generating debrief...",
+      });
+
+      // Generate debrief using edge function
+      const { data, error } = await supabase.functions.invoke('generate-debrief', {
+        body: { simulationId: simulation.id }
+      });
+
+      if (error) throw error;
 
       toast({
         title: "Simulation ended",
-        description: "Your session has been saved.",
+        description: "Your debrief is ready to review.",
       });
 
       navigate(`/deal/${dealId}`);

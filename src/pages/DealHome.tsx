@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network } from "lucide-react";
+import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare } from "lucide-react";
+import SimulationDebrief from "@/components/SimulationDebrief";
 
 interface Deal {
   id: string;
@@ -28,6 +29,7 @@ export default function DealHome() {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [recentMeeting, setRecentMeeting] = useState<any>(null);
   const [stakeholders, setStakeholders] = useState<any[]>([]);
+  const [simulations, setSimulations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,6 +68,20 @@ export default function DealHome() {
 
         if (stakeholderData) {
           setStakeholders(stakeholderData);
+        }
+
+        // Fetch completed simulations with debriefs
+        const { data: simulationsData } = await supabase
+          .from("simulations")
+          .select("*")
+          .eq("deal_id", dealId)
+          .eq("status", "completed")
+          .not("debrief", "is", null)
+          .order("ended_at", { ascending: false })
+          .limit(5);
+
+        if (simulationsData) {
+          setSimulations(simulationsData);
         }
       } catch (error: any) {
         toast({
@@ -335,6 +351,50 @@ export default function DealHome() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Simulations Section */}
+        {simulations.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Recent Simulations
+              </CardTitle>
+              <CardDescription>
+                AI-generated debriefs from your practice sessions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {simulations.map((sim) => (
+                <div key={sim.id} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">
+                        {new Date(sim.ended_at).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {sim.meeting_goal && (
+                        <p className="text-sm text-muted-foreground">Goal: {sim.meeting_goal}</p>
+                      )}
+                    </div>
+                    <Badge variant="secondary">
+                      {sim.stakeholder_ids.length} stakeholder{sim.stakeholder_ids.length > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  {sim.debrief && <SimulationDebrief debrief={sim.debrief} />}
+                  {simulations.indexOf(sim) < simulations.length - 1 && (
+                    <div className="border-t mt-6" />
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Internal Notes Section */}
         {deal.internal_notes && (

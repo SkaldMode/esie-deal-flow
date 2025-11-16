@@ -125,6 +125,7 @@ export type Database = {
         Row: {
           created_at: string | null
           deal_id: string
+          debrief: Json | null
           ended_at: string | null
           id: string
           meeting_goal: string | null
@@ -137,6 +138,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           deal_id: string
+          debrief?: Json | null
           ended_at?: string | null
           id?: string
           meeting_goal?: string | null
@@ -149,6 +151,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           deal_id?: string
+          debrief?: Json | null
           ended_at?: string | null
           id?: string
           meeting_goal?: string | null
