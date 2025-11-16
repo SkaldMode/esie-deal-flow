@@ -1,4 +1,4 @@
-# Welcome to your Lovable Project! Hey there you mothafocka.
+# Welcome to your Lovable Project! Hey there you motherlover.
 
 ## Project info
 
