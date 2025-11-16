@@ -121,6 +121,53 @@ export type Database = {
           },
         ]
       }
+      simulations: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          ended_at: string | null
+          id: string
+          meeting_goal: string | null
+          stakeholder_ids: string[]
+          status: string
+          transcript: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          ended_at?: string | null
+          id?: string
+          meeting_goal?: string | null
+          stakeholder_ids: string[]
+          status?: string
+          transcript?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          ended_at?: string | null
+          id?: string
+          meeting_goal?: string | null
+          stakeholder_ids?: string[]
+          status?: string
+          transcript?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stakeholder_mentions: {
         Row: {
           created_at: string | null
