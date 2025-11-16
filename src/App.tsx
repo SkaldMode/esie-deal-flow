@@ -14,6 +14,7 @@ import MeetingDetails from "./pages/MeetingDetails";
 import Stakeholders from "./pages/Stakeholders";
 import StakeholderProfile from "./pages/StakeholderProfile";
 import StakeholderMap from "./pages/StakeholderMap";
+import SimulationSetup from "./pages/SimulationSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/deal/:dealId/stakeholders" element={<Stakeholders />} />
             <Route path="/deal/:dealId/stakeholder/:stakeholderId" element={<StakeholderProfile />} />
             <Route path="/deal/:dealId/stakeholder-map" element={<StakeholderMap />} />
+            <Route path="/deal/:dealId/simulation-setup" element={<SimulationSetup />} />
             <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
             <Route path="/archived-deals" element={<ArchivedDeals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
