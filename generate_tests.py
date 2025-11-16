@@ -33,7 +33,7 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            # Using the stable model alias
+            # Using the stable model alias that resolved the 404 error
             model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
@@ -42,14 +42,13 @@ def generate_and_save_tests():
             ]
         )
         
-       # 5. Process and save the output (Definitive Fix for Content Access)
+        # 5. Process and save the output (Definitive Fix for Content Access)
         
-        # Check if the content list exists and has at least one item
+        # Check if content list exists and has at least one item
         if message.content and len(message.content) > 0:
-            # We assume the generated text is in the first content block (index 0)
-            content_block = message.content
+            content_block = message.content # Correctly index the first item
             
-            # Check if this content block is of type 'text' and has the.text attribute
+            # Check if this item is text and has the text attribute
             if content_block.type == "text" and hasattr(content_block, 'text'):
                 code_output = content_block.text
                 
@@ -58,7 +57,7 @@ def generate_and_save_tests():
                     
                 print("Successfully generated tests and saved to claude_output.txt")
                 return # Exit successfully
-            
+
         # If execution reaches here, Claude returned something unexpected or non-text
         print("Error: Claude returned unparseable or non-text content.")
         sys.exit(1)
@@ -67,3 +66,6 @@ def generate_and_save_tests():
         # This handles network or API errors
         print(f"An error occurred during API call: {e}")
         sys.exit(1)
+
+if __name__ == "__main__":
+    generate_and_save_tests()
