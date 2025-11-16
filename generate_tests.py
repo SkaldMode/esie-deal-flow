@@ -45,14 +45,22 @@ def generate_and_save_tests():
         )
         
         # 5. Save the raw output to a file for later parsing
-        # We save the raw response (which includes the markdown fences)
-        with open("claude_output.txt", "w") as f:
-            # We assume the content is in the first item of the content list
-            f.write(message.content.text if message.content else "")
-            
-        print("Successfully generated tests and saved to claude_output.txt")
+# We save the raw response (which includes the markdown fences)
+with open("claude_output.txt", "w") as f:
+    # --- THIS LINE IS THE FIX ---
+    # We check if the content list exists and has items, and then access the 
+    # 'text' property of the FIRST item in that list.
+    if message.content and message.content.text:
+        f.write(message.content.text)
+    else:
+        # Fallback for unexpected or empty content
+        print("Error: Claude returned empty or unparseable content.")
+        sys.exit(1)
         
-    except Exception as e:
+print("Successfully generated tests and saved to claude_output.txt")
+
+except Exception as e:
+#... (rest of the code is unchanged)
         print(f"An error occurred during API call: {e}")
         sys.exit(1)
 
