@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { createDealSchema } from "@/lib/validations";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD"];
 const STAGES = ["Discovery", "Demo", "Proposal", "Negotiation", "Closed Won", "Closed Lost"];
@@ -23,6 +24,7 @@ export default function CreateDeal() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     account_name: "",
     deal_value: "",
@@ -36,30 +38,29 @@ export default function CreateDeal() {
     e.preventDefault();
     if (!user) return;
 
-    if (!expectedCloseDate) {
-      toast({
-        title: "Missing information",
-        description: "Please select an expected close date.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    setErrors({});
     setLoading(true);
+
     try {
+      // Validate form
+      const validated = createDealSchema.parse({
+        ...formData,
+        expected_close_month: expectedCloseDate,
+      });
+
       // Format date as YYYY-MM-01 for the first day of the selected month
-      const formattedDate = format(expectedCloseDate, "yyyy-MM-01");
+      const formattedDate = format(validated.expected_close_month, "yyyy-MM-01");
 
       const { data, error } = await supabase
         .from("deals")
         .insert({
           user_id: user.id,
-          account_name: formData.account_name,
-          deal_value: parseFloat(formData.deal_value),
-          currency: formData.currency,
-          stage: formData.stage,
+          account_name: validated.account_name,
+          deal_value: parseFloat(validated.deal_value),
+          currency: validated.currency,
+          stage: validated.stage,
           expected_close_month: formattedDate,
-          internal_notes: formData.internal_notes || null,
+          internal_notes: validated.internal_notes || null,
           status: "active",
         })
         .select()
@@ -69,16 +70,31 @@ export default function CreateDeal() {
 
       toast({
         title: "Deal created!",
-        description: `${formData.account_name} has been added to your workspace.`,
+        description: `${validated.account_name} has been added to your workspace.`,
       });
 
       navigate(`/deal/${data.id}`);
     } catch (error: any) {
-      toast({
-        title: "Error creating deal",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.errors) {
+        // Zod validation errors
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err: any) => {
+          newErrors[err.path[0]] = err.message;
+        });
+        setErrors(newErrors);
+        
+        toast({
+          title: "Validation Error",
+          description: "Please check the form for errors.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error creating deal",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -120,8 +136,11 @@ export default function CreateDeal() {
                   onChange={(e) =>
                     setFormData({ ...formData, account_name: e.target.value })
                   }
-                  required
+                  className={errors.account_name ? "border-destructive" : ""}
                 />
+                {errors.account_name && (
+                  <p className="text-sm text-destructive">{errors.account_name}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -137,8 +156,11 @@ export default function CreateDeal() {
                     onChange={(e) =>
                       setFormData({ ...formData, deal_value: e.target.value })
                     }
-                    required
+                    className={errors.deal_value ? "border-destructive" : ""}
                   />
+                  {errors.deal_value && (
+                    <p className="text-sm text-destructive">{errors.deal_value}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -192,7 +214,8 @@ export default function CreateDeal() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !expectedCloseDate && "text-muted-foreground"
+                        !expectedCloseDate && "text-muted-foreground",
+                        errors.expected_close_month && "border-destructive"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -214,6 +237,9 @@ export default function CreateDeal() {
                     />
                   </PopoverContent>
                 </Popover>
+                {errors.expected_close_month && (
+                  <p className="text-sm text-destructive">{errors.expected_close_month}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -230,7 +256,14 @@ export default function CreateDeal() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating..." : "Create Deal"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Deal"
+                )}
               </Button>
             </form>
           </CardContent>
