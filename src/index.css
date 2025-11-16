@@ -160,3 +160,46 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for prep brief */
+@media print {
+  @page {
+    margin: 1cm;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:border-2 {
+    border-width: 2px !important;
+  }
+
+  .print\:px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .print\:py-4 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .print\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Ensure good page breaks */
+  .card {
+    page-break-inside: avoid;
+  }
+
+  /* Remove background colors for better printing */
+  body {
+    background: white !important;
+  }
+}
