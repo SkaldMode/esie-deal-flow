@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, unauthorizedResponse } from "../_shared/auth.ts";
+import { checkRateLimit, rateLimitResponse, addRateLimitHeaders } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +88,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(supabase, userId, 'extract-meeting-intelligence');
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
 
     // Update status to processing
     await supabase
@@ -317,11 +324,16 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         extracted
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: addRateLimitHeaders(
+          { ...corsHeaders, 'Content-Type': 'application/json' },
+          rateLimitResult
+        )
+      }
     );
 
   } catch (error) {

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, unauthorizedResponse } from "../_shared/auth.ts";
+import { checkRateLimit, rateLimitResponse, addRateLimitHeaders } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +35,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(supabase, userId, 'generate-prep-brief');
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
 
     // Fetch deal details
     const { data: deal, error: dealError } = await supabase
@@ -182,7 +189,7 @@ Be specific, actionable, and strategic. Focus on moving the deal forward.`;
     const brief = JSON.parse(briefContent);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         brief,
         dealInfo: {
           account_name: deal.account_name,
@@ -193,8 +200,11 @@ Be specific, actionable, and strategic. Focus on moving the deal forward.`;
         },
         generatedAt: new Date().toISOString()
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: addRateLimitHeaders(
+          { ...corsHeaders, 'Content-Type': 'application/json' },
+          rateLimitResult
+        )
       }
     );
 
