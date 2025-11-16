@@ -59,8 +59,10 @@ jobs:
         run: |
           pytest --cov --cov-report=xml --junitxml=results.xml
 
+      # Reports Coverage
       - name: Post Coverage Summary to PR
-        uses: uses: romeovs/code-coverage-summary-action@v1
+        # CHANGE THIS LINE to use the simpler '@v1' tag
+        uses: romeovs/code-coverage-summary-action@v1 
         with:
           filename: coverage.xml
           format: markdown
