@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Video, Plus, Network, MessageSquare, Presentation } from "lucide-react";
-import SimulationDebrief from "@/components/SimulationDebrief";
+import { ArrowLeft, Building2, DollarSign, Calendar, FileText, Users, AlertTriangle, Plus, Network, Presentation } from "lucide-react";
 
 interface Deal {
   id: string;
@@ -29,7 +28,6 @@ export default function DealHome() {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [recentMeeting, setRecentMeeting] = useState<any>(null);
   const [stakeholders, setStakeholders] = useState<any[]>([]);
-  const [simulations, setSimulations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,19 +68,7 @@ export default function DealHome() {
           setStakeholders(stakeholderData);
         }
 
-        // Fetch completed simulations with debriefs
-        const { data: simulationsData } = await supabase
-          .from("simulations")
-          .select("*")
-          .eq("deal_id", dealId)
-          .eq("status", "completed")
-          .not("debrief", "is", null)
-          .order("ended_at", { ascending: false })
-          .limit(5);
-
-        if (simulationsData) {
-          setSimulations(simulationsData);
-        }
+        // Simulations removed for MVP simplification
       } catch (error: any) {
         toast({
           title: "Error loading deal",
@@ -226,10 +212,6 @@ export default function DealHome() {
           <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/stakeholder-map`)}>
             <Network className="h-4 w-4" />
             Relationship Map
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/simulation-setup`)}>
-            <Video className="h-4 w-4" />
-            Run Simulation
           </Button>
         </div>
 
@@ -388,49 +370,7 @@ export default function DealHome() {
           </Card>
         </div>
 
-        {/* Simulations Section */}
-        {simulations.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Recent Simulations
-              </CardTitle>
-              <CardDescription>
-                AI-generated debriefs from your practice sessions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {simulations.map((sim) => (
-                <div key={sim.id} className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">
-                        {new Date(sim.ended_at).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {sim.meeting_goal && (
-                        <p className="text-sm text-muted-foreground">Goal: {sim.meeting_goal}</p>
-                      )}
-                    </div>
-                    <Badge variant="secondary">
-                      {sim.stakeholder_ids.length} stakeholder{sim.stakeholder_ids.length > 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                  {sim.debrief && <SimulationDebrief debrief={sim.debrief} />}
-                  {simulations.indexOf(sim) < simulations.length - 1 && (
-                    <div className="border-t mt-6" />
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+        {/* Simulations removed for MVP simplification */}
 
         {/* Internal Notes Section */}
         {deal.internal_notes && (
