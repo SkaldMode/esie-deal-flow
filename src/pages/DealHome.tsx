@@ -207,7 +207,7 @@ export default function DealHome() {
             <Network className="h-4 w-4" />
             Relationship Map
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/deal/${deal.id}/simulation-setup`)}>
             <Video className="h-4 w-4" />
             Run Simulation
           </Button>
