@@ -36,7 +36,7 @@ def generate_and_save_tests():
     # 4. Call the Claude API
     try:
         message = client.messages.create(
-            model="claude-3-sonnet",
+            model="claude-sonnet-4-5",
             max_tokens=2048,
             system=system_prompt,
             messages=[
