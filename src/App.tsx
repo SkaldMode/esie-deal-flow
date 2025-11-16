@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DealProvider } from "@/contexts/DealContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateDeal from "./pages/CreateDeal";
+import DealsListPage from "./pages/DealsListPage";
 import DealHome from "./pages/DealHome";
 import ArchivedDeals from "./pages/ArchivedDeals";
 import AddMeeting from "./pages/AddMeeting";
@@ -28,23 +30,26 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/create-deal" element={<CreateDeal />} />
-            <Route path="/deal/:dealId" element={<DealHome />} />
-            <Route path="/deal/:dealId/prep-brief" element={<PrepBrief />} />
-            <Route path="/deal/:dealId/add-meeting" element={<AddMeeting />} />
-            <Route path="/deal/:dealId/stakeholders" element={<Stakeholders />} />
-            <Route path="/deal/:dealId/stakeholder/:stakeholderId" element={<StakeholderProfile />} />
-            <Route path="/deal/:dealId/stakeholder-map" element={<StakeholderMap />} />
-            <Route path="/deal/:dealId/simulation-setup" element={<SimulationSetup />} />
-            <Route path="/deal/:dealId/simulation" element={<SimulationChat />} />
-            <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
-            <Route path="/archived-deals" element={<ArchivedDeals />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <DealProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/deals" element={<DealsListPage />} />
+              <Route path="/create-deal" element={<CreateDeal />} />
+              <Route path="/deal/:dealId" element={<DealHome />} />
+              <Route path="/deal/:dealId/prep-brief" element={<PrepBrief />} />
+              <Route path="/deal/:dealId/add-meeting" element={<AddMeeting />} />
+              <Route path="/deal/:dealId/stakeholders" element={<Stakeholders />} />
+              <Route path="/deal/:dealId/stakeholder/:stakeholderId" element={<StakeholderProfile />} />
+              <Route path="/deal/:dealId/stakeholder-map" element={<StakeholderMap />} />
+              <Route path="/deal/:dealId/simulation-setup" element={<SimulationSetup />} />
+              <Route path="/deal/:dealId/simulation" element={<SimulationChat />} />
+              <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
+              <Route path="/archived-deals" element={<ArchivedDeals />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </DealProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
