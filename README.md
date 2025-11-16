@@ -1,4 +1,4 @@
-# Welcome to your Lovable Project! Hey there you ptrraxxui.
+# Welcome to your Lovable Project! Hey there you petrosexual.
 
 ## Project info
 
