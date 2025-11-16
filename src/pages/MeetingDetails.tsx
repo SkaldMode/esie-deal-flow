@@ -29,30 +29,11 @@ import {
 interface Stakeholder {
   name: string;
   role_title: string;
-  department: string;
-  stance_guess: string;
-  power_guess: string;
-}
-
-interface Quote {
-  speaker_name: string;
-  quote_text: string;
-  context: string;
-}
-
-interface Objection {
-  objection_text: string;
-  source_name: string;
 }
 
 interface Risk {
   risk_description: string;
   severity: string;
-}
-
-interface ApprovalClue {
-  clue_text: string;
-  source_name: string;
 }
 
 interface Meeting {
@@ -64,10 +45,7 @@ interface Meeting {
   raw_notes: string;
   created_at: string;
   stakeholders: Stakeholder[];
-  quotes: Quote[];
-  objections: Objection[];
   risks: Risk[];
-  approval_clues: ApprovalClue[];
   extraction_status: string;
   extraction_error: string | null;
 }
@@ -88,9 +66,7 @@ export default function MeetingDetails() {
   const [saving, setSaving] = useState(false);
   
   // Edit state
-  const [editedStakeholders, setEditedStakeholders] = useState<Stakeholder[]>([]);
   const [editedRisks, setEditedRisks] = useState<Risk[]>([]);
-  const [editedObjections, setEditedObjections] = useState<Objection[]>([]);
 
   useEffect(() => {
     if (!user || !meetingId) {
@@ -111,16 +87,11 @@ export default function MeetingDetails() {
         const parsedMeeting: Meeting = {
           ...meetingData,
           stakeholders: (Array.isArray(meetingData.stakeholders) ? meetingData.stakeholders : []) as unknown as Stakeholder[],
-          quotes: (Array.isArray(meetingData.quotes) ? meetingData.quotes : []) as unknown as Quote[],
-          objections: (Array.isArray(meetingData.objections) ? meetingData.objections : []) as unknown as Objection[],
           risks: (Array.isArray(meetingData.risks) ? meetingData.risks : []) as unknown as Risk[],
-          approval_clues: (Array.isArray(meetingData.approval_clues) ? meetingData.approval_clues : []) as unknown as ApprovalClue[],
         };
-        
+
         setMeeting(parsedMeeting);
-        setEditedStakeholders([...parsedMeeting.stakeholders]);
         setEditedRisks([...parsedMeeting.risks]);
-        setEditedObjections([...parsedMeeting.objections]);
 
         // Fetch deal info
         const { data: dealData, error: dealError } = await supabase
@@ -148,15 +119,13 @@ export default function MeetingDetails() {
 
   const handleSaveChanges = async () => {
     if (!meeting) return;
-    
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from("meetings")
         .update({
-          stakeholders: editedStakeholders as any,
           risks: editedRisks as any,
-          objections: editedObjections as any,
         })
         .eq("id", meeting.id);
 
@@ -164,9 +133,7 @@ export default function MeetingDetails() {
 
       setMeeting({
         ...meeting,
-        stakeholders: editedStakeholders,
         risks: editedRisks,
-        objections: editedObjections,
       });
       
       setIsEditing(false);
@@ -187,41 +154,12 @@ export default function MeetingDetails() {
 
   const handleCancelEdit = () => {
     if (!meeting) return;
-    setEditedStakeholders([...meeting.stakeholders]);
     setEditedRisks([...meeting.risks]);
-    setEditedObjections([...meeting.objections]);
     setIsEditing(false);
   };
 
-  const addStakeholder = () => {
-    setEditedStakeholders([
-      ...editedStakeholders,
-      {
-        name: "",
-        role_title: "",
-        department: "",
-        stance_guess: "neutral",
-        power_guess: "medium",
-      },
-    ]);
-  };
-
-  const updateStakeholder = (index: number, field: keyof Stakeholder, value: string) => {
-    const updated = [...editedStakeholders];
-    updated[index] = { ...updated[index], [field]: value };
-    setEditedStakeholders(updated);
-  };
-
-  const deleteStakeholder = (index: number) => {
-    setEditedStakeholders(editedStakeholders.filter((_, i) => i !== index));
-  };
-
-  const rejectRisk = (index: number) => {
+  const removeRisk = (index: number) => {
     setEditedRisks(editedRisks.filter((_, i) => i !== index));
-  };
-
-  const rejectObjection = (index: number) => {
-    setEditedObjections(editedObjections.filter((_, i) => i !== index));
   };
 
   if (loading) {
@@ -328,161 +266,122 @@ export default function MeetingDetails() {
                         <User className="h-4 w-4" />
                         Stakeholders ({meeting.stakeholders.length})
                       </h3>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {meeting.stakeholders.map((stakeholder: any, idx: number) => (
                           <Card key={idx} className="p-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <p className="font-semibold">{stakeholder.name}</p>
-                                <p className="text-sm text-muted-foreground">{stakeholder.role}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Badge variant={
-                                  stakeholder.sentiment === 'positive' ? 'default' :
-                                  stakeholder.sentiment === 'negative' ? 'destructive' : 'secondary'
-                                }>
-                                  {stakeholder.sentiment}
-                                </Badge>
-                                <Badge variant="outline">{stakeholder.influence} influence</Badge>
-                              </div>
-                            </div>
-                            {stakeholder.notes && (
-                              <p className="text-sm text-muted-foreground mt-2">
-                                {stakeholder.notes}
-                              </p>
-                            )}
+                            <p className="font-semibold">{stakeholder.name}</p>
+                            <p className="text-sm text-muted-foreground">{stakeholder.role_title}</p>
                           </Card>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Quotes */}
-                  {meeting.quotes && meeting.quotes.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Key Quotes ({meeting.quotes.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {meeting.quotes.map((quote: any, idx: number) => (
-                          <Card key={idx} className="p-3">
-                            <p className="text-sm italic mb-2">"{quote.quote}"</p>
-                            <div className="flex justify-between items-center text-xs text-muted-foreground">
-                              <span>— {quote.speaker}</span>
-                              {quote.context && <span>{quote.context}</span>}
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Objections */}
-                  {meeting.objections && meeting.objections.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        Objections ({meeting.objections.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {meeting.objections.map((objection: any, idx: number) => (
-                          <Card key={idx} className="p-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <p className="font-semibold text-sm">{objection.topic}</p>
-                              <Badge variant={
-                                objection.severity === 'high' ? 'destructive' :
-                                objection.severity === 'medium' ? 'default' : 'secondary'
-                              }>
-                                {objection.severity}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-1">
-                              {objection.description}
-                            </p>
-                            {objection.stakeholder && (
-                              <p className="text-xs text-muted-foreground">
-                                Raised by: {objection.stakeholder}
-                              </p>
-                            )}
-                          </Card>
-                        ))}
-                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Visit the <button onClick={() => navigate(`/deal/${meeting.deal_id}/stakeholders`)} className="underline">Stakeholders page</button> to view and edit full profiles.
+                      </p>
                     </div>
                   )}
 
                   {/* Risks */}
-                  {meeting.risks && meeting.risks.length > 0 && (
+                  {isEditing ? (
                     <div>
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        Risks ({meeting.risks.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {meeting.risks.map((risk: any, idx: number) => (
-                          <Card key={idx} className="p-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <Badge variant="outline" className="mb-1">{risk.category}</Badge>
-                                <p className="text-sm">{risk.description}</p>
-                              </div>
-                              <Badge variant={
-                                risk.severity === 'high' ? 'destructive' :
-                                risk.severity === 'medium' ? 'default' : 'secondary'
-                              }>
-                                {risk.severity}
-                              </Badge>
-                            </div>
-                            {risk.mitigation && (
-                              <div className="mt-2 p-2 bg-muted rounded text-xs">
-                                <span className="font-semibold">Mitigation: </span>
-                                {risk.mitigation}
-                              </div>
-                            )}
-                          </Card>
-                        ))}
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Risks ({editedRisks.length})
+                        </h3>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Approval Clues */}
-                  {meeting.approval_clues && meeting.approval_clues.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        Approval Signals ({meeting.approval_clues.length})
-                      </h3>
                       <div className="space-y-2">
-                        {meeting.approval_clues.map((clue: any, idx: number) => (
+                        {editedRisks.map((risk: any, idx: number) => (
                           <Card key={idx} className="p-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <Badge variant="default" className="mb-1">{clue.type}</Badge>
-                                <p className="text-sm">{clue.description}</p>
-                                {clue.stakeholder && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    From: {clue.stakeholder}
-                                  </p>
-                                )}
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm mb-1">{risk.risk_description}</p>
+                                <Badge variant={
+                                  risk.severity === 'high' ? 'destructive' :
+                                  risk.severity === 'medium' ? 'default' : 'secondary'
+                                }>
+                                  {risk.severity}
+                                </Badge>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeRisk(idx)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
                             </div>
                           </Card>
                         ))}
+                        {editedRisks.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">No risks identified</p>
+                        )}
                       </div>
                     </div>
+                  ) : (
+                    meeting.risks && meeting.risks.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Risks ({meeting.risks.length})
+                        </h3>
+                        <div className="space-y-2">
+                          {meeting.risks.map((risk: any, idx: number) => (
+                            <Card key={idx} className="p-3">
+                              <div className="flex justify-between items-start gap-2">
+                                <p className="text-sm flex-1">{risk.risk_description}</p>
+                                <Badge variant={
+                                  risk.severity === 'high' ? 'destructive' :
+                                  risk.severity === 'medium' ? 'default' : 'secondary'
+                                }>
+                                  {risk.severity}
+                                </Badge>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {/* No insights found */}
-                  {(!meeting.stakeholders || meeting.stakeholders.length === 0) &&
-                   (!meeting.quotes || meeting.quotes.length === 0) &&
-                   (!meeting.objections || meeting.objections.length === 0) &&
-                   (!meeting.risks || meeting.risks.length === 0) &&
-                   (!meeting.approval_clues || meeting.approval_clues.length === 0) && (
+                  {!isEditing &&
+                   (!meeting.stakeholders || meeting.stakeholders.length === 0) &&
+                   (!meeting.risks || meeting.risks.length === 0) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p className="text-sm">No insights extracted from the meeting notes.</p>
-                      <p className="text-xs mt-2">Try adding more detailed notes.</p>
+                      <p className="text-xs mt-2">Try adding more detailed notes about stakeholders and risks.</p>
                     </div>
                   )}
+
+                  {/* Edit Controls */}
+                  <div className="flex gap-2 pt-4">
+                    {isEditing ? (
+                      <>
+                        <Button onClick={handleSaveChanges} disabled={saving}>
+                          {saving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
+                          <X className="mr-2 h-4 w-4" />
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="outline" onClick={() => setIsEditing(true)}>
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Edit Risks
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 

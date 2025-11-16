@@ -109,9 +109,9 @@ const Index = () => {
               <h3 className="font-semibold mb-3">What you'll be able to do:</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Track meetings and stakeholder interactions</li>
-                <li>• Map buying committee and decision-makers</li>
-                <li>• Practice meetings with AI simulations</li>
-                <li>• Get insights to move deals faster</li>
+                <li>• Auto-extract stakeholders and risks from meeting notes</li>
+                <li>• Map buying committee and relationships</li>
+                <li>• Generate instant prep briefs for upcoming meetings</li>
               </ul>
             </div>
           </CardContent>

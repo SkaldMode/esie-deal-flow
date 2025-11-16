@@ -94,7 +94,7 @@ export default function AddMeeting() {
       // Trigger AI extraction (non-blocking)
       supabase.functions
         .invoke('extract-meeting-intelligence', {
-          body: { 
+          body: {
             meetingId: data.id,
             rawNotes: validated.raw_notes
           }
@@ -102,16 +102,11 @@ export default function AddMeeting() {
         .then(({ error: extractError }) => {
           if (extractError) {
             console.error('Extraction error:', extractError);
-            toast({
-              title: "Note",
-              description: "AI extraction is processing. You can view results shortly.",
-              variant: "default",
-            });
           }
         });
 
-      // Navigate immediately, don't wait for extraction
-      navigate(`/meeting/${data.id}`);
+      // Navigate to status page to show extraction progress
+      navigate(`/meeting/${data.id}/extraction-status`);
     } catch (error: any) {
       if (error.errors) {
         // Zod validation errors
@@ -219,7 +214,7 @@ export default function AddMeeting() {
                 <Label htmlFor="raw_notes">Meeting Notes *</Label>
                 <Textarea
                   id="raw_notes"
-                  placeholder="Paste your meeting notes here. Include stakeholder names, quotes, objections, and key discussion points..."
+                  placeholder="Paste your meeting notes here. Include stakeholder names, key discussion points, and any risks or concerns mentioned..."
                   value={formData.raw_notes}
                   onChange={(e) =>
                     setFormData({ ...formData, raw_notes: e.target.value })
@@ -231,7 +226,7 @@ export default function AddMeeting() {
                   <p className="text-sm text-destructive">{errors.raw_notes}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  AI will automatically extract stakeholders, quotes, objections, and risks from your notes.
+                  AI will automatically extract stakeholders and risks from your notes.
                 </p>
               </div>
 

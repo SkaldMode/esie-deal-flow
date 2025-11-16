@@ -11,6 +11,7 @@ import DealHome from "./pages/DealHome";
 import ArchivedDeals from "./pages/ArchivedDeals";
 import AddMeeting from "./pages/AddMeeting";
 import MeetingDetails from "./pages/MeetingDetails";
+import MeetingExtractionStatus from "./pages/MeetingExtractionStatus";
 import Stakeholders from "./pages/Stakeholders";
 import StakeholderProfile from "./pages/StakeholderProfile";
 import StakeholderMap from "./pages/StakeholderMap";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/deal/:dealId/stakeholder/:stakeholderId" element={<StakeholderProfile />} />
             <Route path="/deal/:dealId/stakeholder-map" element={<StakeholderMap />} />
             <Route path="/meeting/:meetingId" element={<MeetingDetails />} />
+            <Route path="/meeting/:meetingId/extraction-status" element={<MeetingExtractionStatus />} />
             <Route path="/archived-deals" element={<ArchivedDeals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
