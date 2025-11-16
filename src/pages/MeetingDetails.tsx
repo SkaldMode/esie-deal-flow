@@ -5,8 +5,55 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, Video, User, MessageSquare, AlertTriangle, TrendingUp, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Video, 
+  User, 
+  MessageSquare, 
+  AlertTriangle, 
+  TrendingUp, 
+  Loader2,
+  Edit2,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Check
+} from "lucide-react";
+
+interface Stakeholder {
+  name: string;
+  role_title: string;
+  department: string;
+  stance_guess: string;
+  power_guess: string;
+}
+
+interface Quote {
+  speaker_name: string;
+  quote_text: string;
+  context: string;
+}
+
+interface Objection {
+  objection_text: string;
+  source_name: string;
+}
+
+interface Risk {
+  risk_description: string;
+  severity: string;
+}
+
+interface ApprovalClue {
+  clue_text: string;
+  source_name: string;
+}
 
 interface Meeting {
   id: string;
@@ -16,11 +63,11 @@ interface Meeting {
   channel: string;
   raw_notes: string;
   created_at: string;
-  stakeholders: any[];
-  quotes: any[];
-  objections: any[];
-  risks: any[];
-  approval_clues: any[];
+  stakeholders: Stakeholder[];
+  quotes: Quote[];
+  objections: Objection[];
+  risks: Risk[];
+  approval_clues: ApprovalClue[];
   extraction_status: string;
   extraction_error: string | null;
 }
@@ -37,6 +84,13 @@ export default function MeetingDetails() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [deal, setDeal] = useState<Deal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Edit state
+  const [editedStakeholders, setEditedStakeholders] = useState<Stakeholder[]>([]);
+  const [editedRisks, setEditedRisks] = useState<Risk[]>([]);
+  const [editedObjections, setEditedObjections] = useState<Objection[]>([]);
 
   useEffect(() => {
     if (!user || !meetingId) {
@@ -54,15 +108,19 @@ export default function MeetingDetails() {
 
         if (meetingError) throw meetingError;
         
-        // Cast the data to Meeting type
-        setMeeting({
+        const parsedMeeting: Meeting = {
           ...meetingData,
-          stakeholders: Array.isArray(meetingData.stakeholders) ? meetingData.stakeholders : [],
-          quotes: Array.isArray(meetingData.quotes) ? meetingData.quotes : [],
-          objections: Array.isArray(meetingData.objections) ? meetingData.objections : [],
-          risks: Array.isArray(meetingData.risks) ? meetingData.risks : [],
-          approval_clues: Array.isArray(meetingData.approval_clues) ? meetingData.approval_clues : [],
-        } as Meeting);
+          stakeholders: (Array.isArray(meetingData.stakeholders) ? meetingData.stakeholders : []) as unknown as Stakeholder[],
+          quotes: (Array.isArray(meetingData.quotes) ? meetingData.quotes : []) as unknown as Quote[],
+          objections: (Array.isArray(meetingData.objections) ? meetingData.objections : []) as unknown as Objection[],
+          risks: (Array.isArray(meetingData.risks) ? meetingData.risks : []) as unknown as Risk[],
+          approval_clues: (Array.isArray(meetingData.approval_clues) ? meetingData.approval_clues : []) as unknown as ApprovalClue[],
+        };
+        
+        setMeeting(parsedMeeting);
+        setEditedStakeholders([...parsedMeeting.stakeholders]);
+        setEditedRisks([...parsedMeeting.risks]);
+        setEditedObjections([...parsedMeeting.objections]);
 
         // Fetch deal info
         const { data: dealData, error: dealError } = await supabase
@@ -88,6 +146,84 @@ export default function MeetingDetails() {
     fetchMeeting();
   }, [user, meetingId, navigate, toast]);
 
+  const handleSaveChanges = async () => {
+    if (!meeting) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("meetings")
+        .update({
+          stakeholders: editedStakeholders as any,
+          risks: editedRisks as any,
+          objections: editedObjections as any,
+        })
+        .eq("id", meeting.id);
+
+      if (error) throw error;
+
+      setMeeting({
+        ...meeting,
+        stakeholders: editedStakeholders,
+        risks: editedRisks,
+        objections: editedObjections,
+      });
+      
+      setIsEditing(false);
+      toast({
+        title: "Changes saved",
+        description: "Your edits have been saved successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving changes",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (!meeting) return;
+    setEditedStakeholders([...meeting.stakeholders]);
+    setEditedRisks([...meeting.risks]);
+    setEditedObjections([...meeting.objections]);
+    setIsEditing(false);
+  };
+
+  const addStakeholder = () => {
+    setEditedStakeholders([
+      ...editedStakeholders,
+      {
+        name: "",
+        role_title: "",
+        department: "",
+        stance_guess: "neutral",
+        power_guess: "medium",
+      },
+    ]);
+  };
+
+  const updateStakeholder = (index: number, field: keyof Stakeholder, value: string) => {
+    const updated = [...editedStakeholders];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditedStakeholders(updated);
+  };
+
+  const deleteStakeholder = (index: number) => {
+    setEditedStakeholders(editedStakeholders.filter((_, i) => i !== index));
+  };
+
+  const rejectRisk = (index: number) => {
+    setEditedRisks(editedRisks.filter((_, i) => i !== index));
+  };
+
+  const rejectObjection = (index: number) => {
+    setEditedObjections(editedObjections.filter((_, i) => i !== index));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -105,6 +241,10 @@ export default function MeetingDetails() {
       day: "numeric",
     });
   };
+
+  const displayStakeholders = isEditing ? editedStakeholders : meeting.stakeholders;
+  const displayRisks = isEditing ? editedRisks : meeting.risks;
+  const displayObjections = isEditing ? editedObjections : meeting.objections;
 
   return (
     <div className="min-h-screen bg-background">
