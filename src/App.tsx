@@ -8,6 +8,7 @@ import { DealProvider } from "@/contexts/DealContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateDeal from "./pages/CreateDeal";
+import DealsListPage from "./pages/DealsListPage";
 import DealHome from "./pages/DealHome";
 import ArchivedDeals from "./pages/ArchivedDeals";
 import AddMeeting from "./pages/AddMeeting";
@@ -33,6 +34,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/deals" element={<DealsListPage />} />
               <Route path="/create-deal" element={<CreateDeal />} />
               <Route path="/deal/:dealId" element={<DealHome />} />
               <Route path="/deal/:dealId/prep-brief" element={<PrepBrief />} />
